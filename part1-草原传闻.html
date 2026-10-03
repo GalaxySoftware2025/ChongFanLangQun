@@ -1,0 +1,1547 @@
+<title>草原传闻</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500&family=Noto+Serif+SC:wght@400;600&family=Zhi+Mang+Xing&display=swap">
+<style>
+/* Layout: one sticky "camera" stage of layered watercolor SVG scenes (11 shots); narration cards scroll over it like a documentary diary. Single committed look (paper + film), same system as 第一场《找到格林》. */
+:root {
+  color-scheme: light;
+  --paper: #efece4;
+  --paper-card: rgba(246, 243, 235, 0.88);
+  --ink: #2a2925;
+  --ink-soft: #5d5a52;
+  --night-card: rgba(20, 17, 14, 0.64);
+  --night-ink: #efe7d8;
+  --accent: #7e95a0;          /* the cub's grey-blue eyes */
+  --ochre: #a9814e;
+  --label-bg: rgba(18, 16, 14, 0.42);
+  --label-ink: #ece5d6;
+  --f-serif: "Noto Serif SC", "Songti SC", "STSong", "SimSun", serif;
+  --f-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+  --f-hand: "Zhi Mang Xing", "Kaiti SC", "STKaiti", "KaiTi", cursive;
+}
+html { background: var(--paper); }
+body { background: var(--paper); color: var(--ink); font-family: var(--f-serif); overflow-x: clip; }
+
+.film { position: relative; }
+.stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: #cfc6ad; }
+.scene { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity 1.4s ease, visibility 0s linear 1.4s; }
+.scene.on { opacity: 1; visibility: visible; transition: opacity 1.4s ease, visibility 0s; }
+.scene:not(.on) * { animation-play-state: paused !important; }
+.scene[data-n="3"] { background: #4a423a; }
+.layer { position: absolute; top: 0; bottom: 0; left: -4%; right: -4%; }
+.scene.on .layer { will-change: transform; }
+.stage { -webkit-tap-highlight-color: transparent; }
+.layer svg { display: block; width: 100%; height: 100%; }
+.hand { font-family: var(--f-hand); }
+.grain {
+  position: absolute; inset: 0; pointer-events: none; opacity: .5; mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .42  0 0 0 0 .37  0 0 0 0 .3  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
+}
+.vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 55%, transparent 55%, rgba(25, 18, 10, .32) 100%); }
+
+.shot {
+  position: absolute; left: 16px; top: calc(env(safe-area-inset-top, 0px) + 14px);
+  display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center;
+  font: 500 11px/1 var(--f-sans); letter-spacing: .14em; color: var(--label-ink);
+  max-width: calc(100% - 250px);
+}
+.shot span { background: var(--label-bg); padding: 6px 9px; border-radius: 2px; }
+.shot .geo { font-variant-numeric: tabular-nums; opacity: .85; }
+
+/* top-right controls: reading mode + sound */
+.ctrls { position: fixed; z-index: 20; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 10px); display: flex; gap: 8px; align-items: center; }
+.modes { display: inline-flex; padding: 2px; border-radius: 999px; background: var(--label-bg); border: 1px solid rgba(236, 229, 214, .35); }
+.modes button { font: 500 12px/1 var(--f-sans); letter-spacing: .08em; color: var(--label-ink); background: transparent; border: 0; padding: 8px 11px; border-radius: 999px; cursor: pointer; }
+.modes button[aria-pressed="true"] { background: rgba(236, 229, 214, .92); color: #1d1a16; }
+.pick { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 14px; }
+.pick .modes { background: transparent; border-color: rgba(42, 41, 37, .45); }
+.pick .modes button { font-size: 14px; padding: 11px 16px; color: var(--ink); }
+.pick .modes button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+.pick-mode { display: inline-flex; align-items: center; gap: 12px; }
+.pick-label { font: 500 12px/1 var(--f-sans); letter-spacing: .2em; color: var(--ink-soft); }
+html.click-mode { overflow: hidden; }
+html.click-mode .stage { cursor: pointer; }
+.snd {
+  font: 500 12px/1 var(--f-sans); letter-spacing: .08em; color: var(--label-ink);
+  background: var(--label-bg); border: 1px solid rgba(236, 229, 214, .35);
+  padding: 9px 12px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+}
+.snd i { width: 7px; height: 7px; border-radius: 50%; background: rgba(236, 229, 214, .45); }
+.snd[aria-pressed="true"] i { background: #9fd0a6; box-shadow: 0 0 0 3px rgba(159, 208, 166, .25); }
+button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+/* narration */
+.beats { position: relative; z-index: 2; margin-top: -100vh; margin-top: -100svh; pointer-events: none; }
+.beat { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding-inline: 16px; }
+.card {
+  pointer-events: auto; max-width: 25rem; margin-left: max(0px, calc(6vw - 16px));
+  background: var(--paper-card); color: var(--ink);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  padding: 1.35rem 1.6rem; border-radius: 3px; box-shadow: 0 10px 30px -18px rgba(30, 22, 12, .5);
+}
+.beat[data-tone="dark"] .card { background: var(--night-card); color: var(--night-ink); box-shadow: none; }
+.card p { margin: 0; font-size: clamp(1.08rem, .98rem + .45vw, 1.35rem); line-height: 1.95; letter-spacing: .03em; }
+.card p + p { margin-top: .6em; }
+/* fixed narration: one card stays put inside the sticky stage; scrolling only swaps its words.
+   The per-beat cards stay in the page as the screen-reader text and as scroll spacers. */
+.beat:not(.title-beat) > .card { position: absolute; width: 1px; height: 1px; padding: 0; margin: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.narr { position: absolute; z-index: 3; left: max(16px, 6vw); top: 50%; transform: translateY(-50%); width: min(25rem, calc(100% - 32px)); transition: opacity .6s ease; }
+.narr.hide { opacity: 0; }
+.narr .card { margin: 0; max-width: none; transition: background-color .6s ease, color .6s ease, box-shadow .6s ease; }
+.narr .card.dark { background: var(--night-card); color: var(--night-ink); box-shadow: none; }
+.narr .txt { transition: opacity .28s ease, transform .28s ease; }
+.narr .txt.out { opacity: 0; transform: translateY(5px); }
+.narr .foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: .85rem; min-height: 28px; }
+.nav { display: none; gap: 6px; }
+html.click-mode .nav { display: flex; }
+.nav button { font: 500 12px/1 var(--f-sans); letter-spacing: .1em; color: inherit; background: transparent; border: 1px solid currentColor; opacity: .65; padding: 7px 10px; border-radius: 2px; cursor: pointer; }
+.nav button:hover { opacity: 1; }
+.nav button:disabled { opacity: .25; cursor: default; }
+.narr .count { font: 500 11px/1 var(--f-sans); letter-spacing: .16em; opacity: .5; font-variant-numeric: tabular-nums; }
+
+.title-beat { align-items: flex-start; padding-block: 16vh 0; }
+.title-block { pointer-events: auto; max-width: 34rem; margin-left: max(0px, calc(6vw - 16px)); }
+.eyebrow { font: 500 12px/1.6 var(--f-sans); letter-spacing: .24em; color: var(--ink-soft); margin: 0 0 .9rem; }
+h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacing: .14em; margin: 0; color: var(--ink); text-wrap: balance; }
+.lede { font-size: clamp(1rem, .95rem + .3vw, 1.15rem); line-height: 1.9; color: var(--ink-soft); margin: 1.1rem 0 1.6rem; max-width: 26em; }
+.snd-big { font: 500 14px/1 var(--f-sans); letter-spacing: .1em; cursor: pointer; color: var(--paper); background: var(--ink); border: 0; padding: 13px 18px; border-radius: 2px; }
+.snd-big[aria-pressed="true"] { background: var(--ochre); }
+.hint { margin-top: 2.4rem; display: flex; align-items: center; gap: 12px; font: 400 12px/1 var(--f-sans); letter-spacing: .2em; color: var(--ink-soft); }
+.hint::after { content: ""; width: 56px; height: 1px; background: currentColor; transform-origin: left; animation: hint 2.4s ease-in-out infinite; }
+@keyframes hint { 0% { transform: scaleX(.2); opacity: .3 } 60% { transform: scaleX(1); opacity: 1 } 100% { transform: scaleX(1); opacity: 0 } }
+
+/* ---------- art motion ----------
+   SVG elements rotate around their local origin by default; every animated part is
+   drawn around (0,0) inside a translated wrapper, so (0,0) is the joint (hip, neck, tail root). */
+.drift { animation: drift 80s linear infinite alternate; }
+@keyframes drift { from { transform: translateX(-2.5%); } to { transform: translateX(2.5%); } }
+.fbreath { transform-box: fill-box; transform-origin: 50% 100%; animation: breath 2.8s ease-in-out infinite; }
+@keyframes breath { 50% { transform: scale(1.014, 1.05); } }
+.eye { transform-box: fill-box; transform-origin: center; animation: blink 6s infinite; }
+@keyframes blink { 0%, 93%, 100% { transform: scaleY(1) } 95.5% { transform: scaleY(.08) } }
+.mote { animation: mote 11s ease-in-out infinite alternate; }
+@keyframes mote { from { transform: translate(0, 0) } to { transform: translate(22px, -36px) } }
+.fade { transition: opacity 1.2s ease; }
+
+/* people */
+.legA { animation: step 1.05s ease-in-out infinite; }
+.legB { animation: step 1.05s ease-in-out infinite; animation-delay: -.525s; }
+@keyframes step { 0%, 100% { transform: rotate(22deg) } 50% { transform: rotate(-22deg) } }
+.armA { animation: swing 1.05s ease-in-out infinite; }
+@keyframes swing { 0%, 100% { transform: rotate(-16deg) } 50% { transform: rotate(16deg) } }
+.bob { animation: bob .525s ease-in-out infinite; }
+@keyframes bob { 50% { transform: translateY(-1.2px) } }
+.talk { animation: talk 5.5s ease-in-out infinite; }
+@keyframes talk { 0%, 100% { transform: rotate(0) } 18% { transform: rotate(-3deg) } 26% { transform: rotate(1.5deg) } 34% { transform: rotate(-2deg) } 60% { transform: rotate(0) } 70% { transform: rotate(2deg) } }
+.nod { animation: nod 7s ease-in-out infinite; }
+@keyframes nod { 0%, 100% { transform: rotate(0) } 40% { transform: rotate(4deg) } 55% { transform: rotate(5deg) } 70% { transform: rotate(1deg) } }
+.chew { transform-box: fill-box; transform-origin: 10% 10%; animation: chew 1.1s ease-in-out infinite; }
+@keyframes chew { 50% { transform: rotate(5deg) translateY(1.5px) } }
+.beads { animation: bead 1.2s cubic-bezier(.5, 0, .3, 1) infinite; }
+.beads.big { animation-name: beadBig; animation-duration: 1.5s; }
+@keyframes bead { 0% { stroke-dashoffset: 0 } 35%, 100% { stroke-dashoffset: -10.5 } }
+@keyframes beadBig { 0% { stroke-dashoffset: 0 } 35%, 100% { stroke-dashoffset: -26 } }
+.thumb { animation: thumb 1.2s cubic-bezier(.5, 0, .3, 1) infinite; }
+.thumb.big { animation-duration: 1.5s; animation-name: thumbBig; }
+@keyframes thumb { 0% { transform: translate(0, 0) } 35% { transform: translate(-1px, 4px) } 60%, 100% { transform: translate(0, 0) } }
+@keyframes thumbBig { 0% { transform: translate(0, 0) } 35% { transform: translate(-4px, 14px) } 60%, 100% { transform: translate(0, 0) } }
+.stopped .beads, .stopped .thumb { animation-play-state: paused; }
+.steam { animation: steam 4s ease-out infinite; opacity: 0; }
+@keyframes steam { 0% { transform: translateY(6px); opacity: 0 } 30% { opacity: .55 } 100% { transform: translateY(-34px); opacity: 0 } }
+.flame { transform-box: fill-box; transform-origin: 50% 100%; animation: flame .9s ease-in-out infinite alternate; }
+@keyframes flame { 0% { transform: scale(1, 1) skewX(0) } 40% { transform: scale(.94, 1.08) skewX(3deg) } 100% { transform: scale(1.04, .92) skewX(-2deg) } }
+.glow { animation: glow 2.6s ease-in-out infinite alternate; }
+@keyframes glow { from { opacity: .45 } to { opacity: .7 } }
+.ember { animation: ember 6s linear infinite; }
+@keyframes ember { 0% { transform: translate(0, 0); opacity: 0 } 15% { opacity: .9 } 100% { transform: translate(18px, -260px); opacity: 0 } }
+
+/* animals */
+.graze { animation: graze 9s ease-in-out infinite; }
+@keyframes graze { 0%, 38% { transform: rotate(-30deg) } 48%, 84% { transform: rotate(0) } 94%, 100% { transform: rotate(-30deg) } }
+.swish { animation: swish 3.4s ease-in-out infinite; }
+@keyframes swish { 0%, 100% { transform: rotate(0) } 20% { transform: rotate(18deg) } 32% { transform: rotate(-8deg) } 44% { transform: rotate(4deg) } }
+.wag { animation: wag .5s ease-in-out infinite alternate; }
+@keyframes wag { from { transform: rotate(-12deg) } to { transform: rotate(10deg) } }
+.bark { animation: bark 2.3s ease-out infinite; }
+@keyframes bark { 0%, 100% { transform: rotate(0) } 6% { transform: rotate(-14deg) } 14% { transform: rotate(2deg) } 22% { transform: rotate(-12deg) } 30% { transform: rotate(0) } }
+.jaw { animation: jaw 2.3s ease-out infinite; }
+@keyframes jaw { 0%, 100% { transform: rotate(0) } 6% { transform: rotate(22deg) } 14% { transform: rotate(0) } 22% { transform: rotate(20deg) } 30% { transform: rotate(0) } }
+.lean { animation: lean 2.3s ease-out infinite; }
+@keyframes lean { 0%, 100% { transform: translateX(0) } 6% { transform: translateX(5px) } 30% { transform: translateX(0) } }
+.pant { transform-box: fill-box; transform-origin: 50% 60%; animation: pant .7s ease-in-out infinite; }
+@keyframes pant { 50% { transform: scale(1.018) } }
+.snarl { animation: snarl 2.8s ease-in-out infinite; }
+@keyframes snarl { 0%, 100% { transform: translateY(0) } 30%, 60% { transform: translateY(-3px) } }
+.teeth { animation: teeth 2.8s ease-in-out infinite; }
+@keyframes teeth { 0%, 100% { opacity: .35 } 30%, 60% { opacity: 1 } }
+.glint { animation: glint 3.2s ease-in-out infinite; }
+@keyframes glint { 0%, 100% { opacity: .55 } 50% { opacity: 1 } }
+.earflat { animation: earflat 4s ease-in-out infinite; }
+@keyframes earflat { 0%, 100% { transform: rotate(0) } 50% { transform: rotate(-9deg) } }
+.howl { animation: howl 9s ease-in-out infinite; }
+@keyframes howl { 0%, 8% { transform: rotate(-30deg) } 22%, 62% { transform: rotate(0) } 76%, 100% { transform: rotate(-30deg) } }
+.tailsway { animation: tailsway 6s ease-in-out infinite; }
+@keyframes tailsway { 50% { transform: rotate(3deg) } }
+.skirt { animation: skirt 1.05s ease-in-out infinite; }
+@keyframes skirt { 0%, 100% { transform: skewX(-7deg) } 50% { transform: skewX(7deg) } }
+.braid { animation: braid 1.05s ease-in-out infinite; }
+@keyframes braid { 0%, 100% { transform: rotate(5deg) } 50% { transform: rotate(-3deg) } }
+.chest { transform-box: fill-box; transform-origin: 20% 80%; animation: chest 9s ease-in-out infinite; }
+@keyframes chest { 0%, 18% { transform: scale(1) } 24% { transform: scale(1.04, 1.06) } 62% { transform: scale(.98, .97) } 76%, 100% { transform: scale(1) } }
+.vapor { animation: vapor 9s ease-out infinite; opacity: 0; }
+@keyframes vapor { 0%, 22% { transform: translate(0, 0) scale(.4); opacity: 0 } 28% { opacity: .5 } 62% { transform: translate(-30px, -50px) scale(1.6); opacity: 0 } 100% { opacity: 0 } }
+.tuft { animation: tuft 1.6s ease-in-out infinite alternate; }
+@keyframes tuft { from { transform: rotate(-6deg) } to { transform: rotate(8deg) } }
+.lick { animation: lick 2.6s ease-in-out infinite; }
+@keyframes lick { 0%, 100% { transform: rotate(0) translate(0, 0) } 30% { transform: rotate(9deg) translate(-6px, 6px) } 42% { transform: rotate(5deg) translate(-3px, 3px) } 54% { transform: rotate(10deg) translate(-7px, 7px) } }
+.tongue { animation: tongue 2.6s ease-in-out infinite; }
+@keyframes tongue { 0%, 20%, 62%, 100% { opacity: 0 } 30%, 54% { opacity: .9 } }
+.licking-off .lick, .licking-off .tongue { animation: none; opacity: 0; }
+.licking-off .lick { opacity: 1; }
+.mbreath { transform-box: fill-box; transform-origin: 50% 100%; animation: breath 3s ease-in-out infinite; }
+.slow .mbreath { animation-duration: 5.5s; }
+.still .mbreath { animation: none; }
+.wriggle { animation: wriggle 1.9s ease-in-out infinite; }
+@keyframes wriggle { 0%, 100% { transform: translate(0, 0) rotate(0) } 30% { transform: translate(-4px, -1px) rotate(-4deg) } 60% { transform: translate(2px, 0) rotate(3deg) } }
+.flag { animation: flag 1.3s ease-in-out infinite alternate; }
+@keyframes flag { from { transform: skewY(-6deg) scaleX(.9) } to { transform: skewY(8deg) scaleX(1.05) } }
+.twinkle { animation: twinkle 4s ease-in-out infinite; }
+@keyframes twinkle { 50% { opacity: .25 } }
+.orbit { animation: orbit 46s linear infinite; }
+@keyframes orbit { to { transform: rotate(360deg) } }
+.haze { animation: haze 5s ease-in-out infinite alternate; }
+@keyframes haze { from { opacity: .25; transform: translateX(-10px) } to { opacity: .55; transform: translateX(10px) } }
+
+/* ending */
+.end { background: var(--paper); padding-block: 18vh 14vh; padding-inline: 16px; position: relative; z-index: 3; }
+.end-inner { max-width: 40rem; margin: 0 auto; }
+.reel { aspect-ratio: 16 / 9; max-width: 100%; border: 1px dashed #9b958a; border-radius: 2px; display: grid; place-content: center; text-align: center; gap: .6rem; padding: 16px; background: repeating-linear-gradient(135deg, transparent 0 14px, rgba(126, 149, 160, .07) 14px 15px); }
+.reel span { font: 600 1.35rem/1.4 var(--f-serif); letter-spacing: .18em; }
+.reel small { font: 400 .9rem/1.7 var(--f-sans); color: var(--ink-soft); }
+.end h2 { font: 600 1.25rem/1.4 var(--f-serif); letter-spacing: .1em; margin: 3.2rem 0 1rem; }
+.end ul { margin: 0; padding-left: 1.2em; display: grid; gap: .55rem; font: 400 .98rem/1.85 var(--f-sans); color: var(--ink-soft); }
+.next { margin-top: 2.4rem; font: 400 .95rem/1.8 var(--f-sans); color: var(--ink-soft); }
+.again { display: inline-block; margin-top: 1.2rem; font: 500 13px/1 var(--f-sans); letter-spacing: .14em; color: var(--ink); text-underline-offset: 6px; }
+
+@media (max-width: 700px) {
+  /* phones: the card sits up in the sky / tent roof, the slate label drops to the bottom,
+     so the subject in the middle and lower third stays clear */
+  .card, .title-block { margin-inline: auto; }
+  .card { padding: 1rem 1.15rem; }
+  .card p { font-size: 1.04rem; line-height: 1.85; }
+  .narr { left: 16px; right: 16px; width: auto; max-width: 25rem; margin-inline: auto; top: calc(env(safe-area-inset-top, 0px) + 60px); transform: none; }
+  .narr .foot { margin-top: .7rem; }
+  .nav button { padding: 10px 12px; font-size: 13px; }
+  .title-beat { align-items: flex-start; padding-block: 12vh 0; }
+  .lede { font-size: 1rem; margin-block: .9rem 1.3rem; }
+  .shot { top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); max-width: calc(100% - 32px); }
+  .shot .geo { display: none; }
+  .ctrls { right: 12px; gap: 6px; }
+  .modes button { padding: 8px 10px; }
+  .snd { padding: 8px 10px; }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  .title-beat { padding-block: calc(env(safe-area-inset-top, 0px) + 60px) 0; }
+  h1 { font-size: 2.6rem; }
+  .lede { margin-block: .6rem 1rem; }
+  .hint { margin-top: 1.2rem; }
+  .card { padding: .85rem 1.1rem; }
+  .card p { font-size: 1rem; line-height: 1.75; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .drift, .fbreath, .eye, .mote, .hint::after, .legA, .legB, .armA, .bob, .talk, .nod, .chew, .beads, .thumb, .steam, .flame, .glow, .ember,
+  .graze, .swish, .wag, .bark, .jaw, .lean, .pant, .snarl, .teeth, .glint, .earflat, .howl, .chest, .vapor, .tuft, .lick, .tongue,
+  .mbreath, .wriggle, .flag, .twinkle, .orbit, .haze, .tailsway, .skirt, .braid { animation: none !important; }
+  .steam { opacity: .35; }
+  .scene, .fade, .narr, .narr .txt { transition: none; }
+}
+</style>
+
+<div class="ctrls">
+  <div class="modes" role="group" aria-label="阅读方式"><button type="button" data-mode="scroll" aria-pressed="true">滑动</button><button type="button" data-mode="click" aria-pressed="false">点击</button></div>
+  <button class="snd" type="button" data-sound aria-pressed="false"><i></i><span>声音：关</span></button>
+</div>
+
+<!-- shared watercolor filters -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <filter id="wc" x="-10%" y="-10%" width="120%" height="120%" color-interpolation-filters="sRGB">
+      <feTurbulence type="fractalNoise" baseFrequency="0.013" numOctaves="3" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="20" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feMorphology in="d" operator="erode" radius="2.5" result="e"/>
+      <feComposite in="d" in2="e" operator="out" result="edge"/>
+      <feGaussianBlur in="edge" stdDeviation="1.2" result="eb"/>
+      <feColorMatrix in="eb" type="matrix" values=".68 0 0 0 0  0 .68 0 0 0  0 0 .68 0 0  0 0 0 .55 0" result="ed"/>
+      <feGaussianBlur in="d" stdDeviation=".6" result="ds"/>
+      <feMerge><feMergeNode in="ds"/><feMergeNode in="ed"/></feMerge>
+    </filter>
+    <filter id="wcFar" x="-15%" y="-30%" width="130%" height="160%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.009" numOctaves="3" seed="11" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="34" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feGaussianBlur in="d" stdDeviation="2.5"/>
+    </filter>
+    <filter id="fur" x="-30%" y="-60%" width="160%" height="220%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.075" numOctaves="2" seed="9" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feGaussianBlur in="d" stdDeviation=".7"/>
+    </filter>
+    <filter id="pencil" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="2" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="1" seed="5" result="g"/>
+      <feColorMatrix in="g" type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  1.9 0 0 0 -.25" result="m"/>
+      <feComposite in="d" in2="m" operator="in"/>
+    </filter>
+    <filter id="soft" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="haze" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="7"/></filter>
+    <filter id="bloom" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="42"/></filter>
+    <filter id="dof" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="dofBig" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="14"/></filter>
+  </defs>
+</svg>
+
+<div class="film" id="top">
+  <div class="stage">
+
+    <!-- 01 · 大全景 · 正午：雪山、经幡、牦牛，我走向远处的帐篷 -->
+    <div class="scene on" data-n="1" data-fx="620,900" data-zoom="0.03">
+      <div class="layer" data-depth="0">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="g1sky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#a9c0cf"/><stop offset=".42" stop-color="#d8e0de"/><stop offset=".62" stop-color="#f1ead4"/></linearGradient></defs>
+          <rect width="1600" height="900" fill="url(#g1sky)"/>
+          <ellipse cx="1260" cy="110" rx="380" ry="150" fill="#fff4da" opacity=".75" filter="url(#bloom)"/>
+          <circle cx="1260" cy="104" r="34" fill="#fffaf0" opacity=".9"/>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.12">
+        <svg class="drift" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <g filter="url(#wcFar)" fill="#f8f6f0">
+            <ellipse cx="300" cy="160" rx="240" ry="34" opacity=".9"/><ellipse cx="420" cy="138" rx="120" ry="26" opacity=".75"/>
+            <ellipse cx="900" cy="96" rx="300" ry="26" opacity=".7"/><ellipse cx="1420" cy="250" rx="180" ry="22" opacity=".8"/>
+            <ellipse cx="700" cy="262" rx="160" ry="15" opacity=".6"/>
+          </g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.25">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <!-- snow range -->
+          <path d="M0,500 L120,440 L190,462 L300,380 L380,420 L470,360 L560,412 L660,392 L760,430 L880,350 L960,396 L1060,372 L1150,420 L1260,364 L1360,404 L1470,376 L1600,420 L1600,560 L0,560Z" fill="#a7b4bb" filter="url(#wcFar)"/>
+          <g fill="#eef1f0" opacity=".92" filter="url(#wcFar)">
+            <path d="M300,380 L340,400 L322,404 L300,394 L276,404 L262,398Z"/><path d="M470,360 L520,388 L494,390 L470,378 L446,392 L430,384Z"/>
+            <path d="M880,350 L930,378 L904,382 L880,370 L856,384 L838,376Z"/><path d="M1260,364 L1310,390 L1284,392 L1260,380 L1236,394 L1222,386Z"/>
+            <path d="M1060,372 L1094,392 L1060,388 L1036,394Z"/>
+          </g>
+          <path d="M0,540 Q200,500 420,526 T840,518 T1240,522 T1600,512 L1600,600 L0,600Z" fill="#a4a78f" opacity=".85" filter="url(#wc)"/>
+          <!-- distant monastery with a gilded roof -->
+          <g transform="translate(1236,516)">
+            <ellipse cx="18" cy="-8" rx="40" ry="14" fill="#f3d58c" opacity=".55" filter="url(#soft)"/>
+            <rect x="0" y="-10" width="38" height="12" fill="#ece5d4"/><rect x="0" y="-12" width="38" height="3" fill="#8f3a2c"/>
+            <path d="M4,-12 L19,-22 L34,-12Z" fill="#c9a24a"/><rect x="17" y="-27" width="3" height="6" fill="#d9b85c"/>
+          </g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.55">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <path d="M-20,560 Q400,544 800,560 T1620,554 L1620,920 L-20,920Z" fill="#d4c08d" filter="url(#wc)"/>
+          <g filter="url(#wc)" fill="#b3b683" opacity=".55">
+            <ellipse cx="300" cy="630" rx="260" ry="30"/><ellipse cx="1000" cy="600" rx="300" ry="20"/>
+            <ellipse cx="1350" cy="690" rx="220" ry="34"/><ellipse cx="640" cy="716" rx="280" ry="26"/>
+          </g>
+          <path d="M-20,640 C180,612 260,680 470,648 S720,596 840,628 S1010,690 1200,656 S1460,618 1640,642" fill="none" stroke="#e4eae8" stroke-width="9" stroke-linecap="round" filter="url(#wc)"/>
+          <g id="g1mid"></g>
+          <g id="g1herd"></g>
+          <!-- black yak-hair tent with smoke and prayer flags -->
+          <g transform="translate(960,584)">
+            <path d="M-46,8 L-30,-22 Q0,-36 30,-24 L48,8Z" fill="#3b332c" filter="url(#wc)"/>
+            <rect x="-6" y="-8" width="12" height="16" fill="#15110e"/>
+            <path d="M-46,8 L-70,14 M48,8 L72,14" stroke="#5a4e42" stroke-width="1.2"/>
+            <path class="steam" d="M2,-36 q-8,-14 0,-28 q8,-14 0,-28" stroke="#f3efe6" stroke-width="4" fill="none" style="animation-duration:5s"/>
+            <path class="steam" d="M2,-36 q-8,-14 0,-28 q8,-14 0,-28" stroke="#f3efe6" stroke-width="3" fill="none" style="animation-duration:5s;animation-delay:-2.5s"/>
+            <path d="M30,-24 Q70,-26 104,-10" stroke="#6b5f52" stroke-width="1" fill="none"/>
+            <rect x="103" y="-36" width="2" height="42" fill="#5a4e42"/>
+            <g id="g1flags"></g>
+          </g>
+          <g id="w1"></g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="1">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <path id="p1fg" fill="#a48e5a" filter="url(#wc)"/>
+          <g id="g1fg"></g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 02 · 中景 · 牧民帐篷：阿妈数佛珠、酥油茶冒热气、炉火 -->
+    <div class="scene" data-n="2" data-fx="800" data-zoom="0.04">
+      <div class="layer" data-depth="0.15">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <defs><radialGradient id="g2in" cx=".52" cy=".45" r=".8">
+            <stop offset="0" stop-color="#7a5638"/><stop offset=".55" stop-color="#4a3424"/><stop offset="1" stop-color="#1f150e"/></radialGradient></defs>
+          <rect width="1600" height="900" fill="url(#g2in)"/>
+          <g stroke="#2c2017" stroke-width="3" opacity=".35"><path d="M240,0 L200,900"/><path d="M520,0 L500,900"/><path d="M1080,0 L1100,900"/><path d="M1360,0 L1400,900"/></g>
+          <!-- thangka and copper pots on the back wall -->
+          <g filter="url(#wc)">
+            <rect x="330" y="150" width="120" height="170" fill="#8f3a2c" opacity=".75"/>
+            <rect x="346" y="166" width="88" height="128" fill="#c9a24a" opacity=".55"/>
+            <circle cx="390" cy="222" r="26" fill="#3d5b6b" opacity=".6"/>
+          </g>
+          <rect x="1180" y="300" width="260" height="10" fill="#3a2a1d"/>
+          <g fill="#b0703a" filter="url(#wc)"><ellipse cx="1220" cy="282" rx="24" ry="20"/><ellipse cx="1290" cy="276" rx="30" ry="26"/><ellipse cx="1370" cy="284" rx="20" ry="17"/></g>
+          <!-- light falling through the smoke hole -->
+          <path d="M730,0 L870,0 L1080,900 L540,900Z" fill="#f2d39e" opacity=".14" filter="url(#soft)"/>
+          <ellipse cx="810" cy="840" rx="300" ry="50" fill="#f2d39e" opacity=".18" filter="url(#bloom)"/>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.35">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <!-- iron stove -->
+          <ellipse class="glow" cx="1350" cy="640" rx="210" ry="150" fill="#e98a3a" opacity=".5" filter="url(#bloom)"/>
+          <rect x="1270" y="560" width="170" height="170" rx="6" fill="#2a231d" filter="url(#wc)"/>
+          <rect x="1300" y="610" width="110" height="64" rx="4" fill="#120d09"/>
+          <g transform="translate(1355,672)">
+            <path class="flame" d="M-40,0 Q-46,-30 -20,-52 Q-14,-30 0,-24 Q6,-46 26,-56 Q40,-26 36,0Z" fill="#e0702f"/>
+            <path class="flame" style="animation-delay:-.4s" d="M-24,0 Q-26,-22 -8,-38 Q0,-20 12,-16 Q20,-30 28,-34 Q32,-14 24,0Z" fill="#f2a54a"/>
+            <path class="flame" style="animation-delay:-.7s" d="M-10,0 Q-10,-14 2,-24 Q10,-12 12,0Z" fill="#f8d27a"/>
+          </g>
+          <rect x="1340" y="470" width="22" height="92" fill="#2a231d"/>
+          <path d="M1290,560 Q1300,520 1330,520 L1372,520 Q1396,522 1400,560Z" fill="#6b4a32" filter="url(#wc)"/>
+          <path class="steam" d="M1340,514 q-10,-16 0,-32 q10,-16 0,-32" stroke="#efe3cf" stroke-width="5" fill="none"/>
+          <path class="steam" style="animation-delay:-2s" d="M1352,514 q-10,-16 0,-32 q10,-16 0,-32" stroke="#efe3cf" stroke-width="4" fill="none"/>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.55">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <!-- the bearded herder, left -->
+          <path d="M330,740 Q340,590 380,540 Q420,512 462,528 Q500,566 512,740Z" fill="#4a3b30" filter="url(#wc)"/>
+          <path d="M380,540 Q420,520 464,534 Q450,556 420,558 Q392,556 380,540Z" fill="#c9b79a" filter="url(#fur)"/>
+          <g transform="translate(424,486)"><g class="talk" style="animation-delay:-2s">
+            <ellipse cx="4" cy="-30" rx="26" ry="31" fill="#a06e48"/>
+            <ellipse cx="14" cy="-24" rx="7" ry="5" fill="#b8664d" opacity=".35"/>
+            <path d="M-20,-22 Q-10,12 8,16 Q28,10 30,-18 Q16,-4 6,-4 Q-6,-4 -20,-22Z" fill="#2a211c" filter="url(#fur)"/>
+            <path d="M-32,-46 Q2,-84 36,-46 Q30,-38 2,-40 Q-26,-38 -32,-46Z" fill="#b9a27f" filter="url(#fur)"/>
+            <path d="M-30,-46 Q2,-36 34,-46" stroke="#6b4a2f" stroke-width="5" fill="none"/>
+            <path d="M-4,-32 h6 M14,-32 h6" stroke="#2a1d15" stroke-width="2.4" stroke-linecap="round"/>
+          </g></g>
+          <!-- old amala, centre: counting her prayer beads -->
+          <path d="M688,730 Q700,568 730,506 Q762,474 800,472 Q838,474 870,506 Q900,568 912,730Z" fill="#3b2f2a" filter="url(#wc)"/>
+          <path d="M800,476 Q790,560 760,640" stroke="#8b6a3a" stroke-width="5" fill="none" opacity=".7"/>
+          <path d="M712,612 Q800,630 888,612 L892,638 Q800,656 708,638Z" fill="#8b3b2e" filter="url(#wc)"/>
+          <g transform="translate(800,414)"><g class="nod">
+            <path d="M-40,-8 Q-48,-72 0,-80 Q48,-72 40,-8 Q30,12 0,14 Q-30,12 -40,-8Z" fill="#2a211c" filter="url(#fur)"/>
+            <path d="M-36,-12 Q-44,30 -30,70 M36,-12 Q44,30 30,70" stroke="#2a211c" stroke-width="8" fill="none" stroke-linecap="round"/>
+            <ellipse cx="0" cy="-30" rx="28" ry="34" fill="#a9764f"/>
+            <ellipse cx="-15" cy="-20" rx="8" ry="6" fill="#b8664d" opacity=".4"/><ellipse cx="15" cy="-20" rx="8" ry="6" fill="#b8664d" opacity=".4"/>
+            <path d="M-35,-44 Q0,-76 35,-44 Q20,-58 0,-58 Q-20,-58 -35,-44Z" fill="#5a3a2e"/>
+            <path d="M-16,-32 q6,3 12,0 M4,-32 q6,3 12,0" stroke="#2a1d15" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+            <path d="M-22,-22 q4,5 2,11 M22,-22 q-4,5 -2,11 M-10,-46 q10,-3 20,0" stroke="#8a5c3c" stroke-width="1.4" fill="none"/>
+            <path d="M-7,-8 q7,3 14,0" stroke="#6b3f2a" stroke-width="2" fill="none" stroke-linecap="round"/>
+            <circle cx="-29" cy="-18" r="4" fill="#4fa39a"/><circle cx="29" cy="-18" r="4" fill="#b5523e"/>
+          </g></g>
+          <g>
+            <path d="M752,520 Q770,500 800,512" stroke="#3b2f2a" stroke-width="22" fill="none" stroke-linecap="round"/>
+            <path d="M848,520 Q830,500 800,512" stroke="#3b2f2a" stroke-width="22" fill="none" stroke-linecap="round"/>
+            <ellipse cx="784" cy="534" rx="16" ry="12" fill="#9c6b47"/>
+            <path class="beads" d="M772,540 a28,34 0 1,0 56,0 a28,34 0 1,0 -56,0" fill="none" stroke="#6e3b2a" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 10.5"/>
+            <ellipse cx="818" cy="540" rx="16" ry="12" fill="#9c6b47"/>
+            <g class="thumb"><ellipse cx="790" cy="528" rx="6" ry="4.5" fill="#b07b55"/></g>
+            <circle cx="800" cy="610" r="5" fill="#a33a2a"/><path d="M800,614 l-3,14 M800,614 l3,14 M800,614 v15" stroke="#b5523e" stroke-width="1.6"/>
+          </g>
+          <!-- the herder brother, right, lifting his bowl -->
+          <path d="M1010,740 Q1020,590 1060,540 Q1100,514 1140,528 Q1180,566 1200,740Z" fill="#54453a" filter="url(#wc)"/>
+          <g transform="translate(1104,484)"><g class="talk" style="animation-delay:-4s">
+            <ellipse cx="-2" cy="-28" rx="26" ry="31" fill="#a5714b"/>
+            <ellipse cx="-14" cy="-20" rx="7" ry="5" fill="#b8664d" opacity=".35"/>
+            <path d="M-22,-48 Q-20,-80 4,-80 Q28,-80 26,-48Z" fill="#3a2e26"/>
+            <path d="M-44,-48 Q4,-60 50,-48 Q44,-40 4,-44 Q-38,-40 -44,-48Z" fill="#3a2e26"/>
+            <path d="M-18,-30 h6 M2,-30 h6" stroke="#2a1d15" stroke-width="2.4" stroke-linecap="round"/>
+            <path d="M-14,-14 q8,-3 16,0" stroke="#2a211c" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </g></g>
+          <g transform="translate(1070,566)"><g id="bowlArm">
+            <path d="M0,0 Q-30,12 -52,-4" stroke="#54453a" stroke-width="20" fill="none" stroke-linecap="round"/>
+            <ellipse cx="-56" cy="-6" rx="11" ry="9" fill="#a5714b"/>
+            <path d="M-76,-18 Q-58,4 -38,-18Z" fill="#7a5232"/><ellipse cx="-57" cy="-18" rx="19" ry="4" fill="#c9a77a"/>
+          </g></g>
+          <!-- low painted table, butter tea and tsampa -->
+          <rect x="560" y="676" width="480" height="18" fill="#6e4a30" filter="url(#wc)"/>
+          <path d="M560,694 L1040,694 L1020,740 L580,740Z" fill="#5a3b26" filter="url(#wc)"/>
+          <path d="M600,712 q20,-12 40,0 t40,0 t40,0 M880,712 q20,-12 40,0 t40,0 t40,0" stroke="#c9a24a" stroke-width="2" fill="none" opacity=".6"/>
+          <g>
+            <path d="M622,676 Q624,660 650,660 Q676,660 678,676Z" fill="#7a5232"/><ellipse cx="650" cy="661" rx="27" ry="5" fill="#c9a77a"/>
+            <path class="steam" d="M646,652 q-7,-12 0,-24 q7,-12 0,-24" stroke="#efe3cf" stroke-width="3" fill="none"/>
+            <path class="steam" style="animation-delay:-2.2s" d="M656,652 q-7,-12 0,-24 q7,-12 0,-24" stroke="#efe3cf" stroke-width="2.5" fill="none"/>
+            <path d="M876,676 Q878,662 902,662 Q926,662 928,676Z" fill="#7a5232"/><ellipse cx="902" cy="663" rx="25" ry="5" fill="#c9a77a"/>
+            <path class="steam" style="animation-delay:-1.1s" d="M900,654 q-7,-12 0,-24 q7,-12 0,-24" stroke="#efe3cf" stroke-width="3" fill="none"/>
+            <ellipse cx="770" cy="672" rx="22" ry="12" fill="#d8c6a0" filter="url(#fur)"/><ellipse cx="796" cy="674" rx="14" ry="9" fill="#cbb791" filter="url(#fur)"/>
+          </g>
+          <g id="g2motes"></g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="1.25">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <!-- me, back to camera, out of focus: long black hair down a white blouse -->
+          <g filter="url(#dofBig)">
+            <path d="M30,940 Q50,780 150,738 Q200,712 262,712 Q328,714 370,738 Q470,780 494,940Z" fill="#8c8174"/>
+            <path d="M370,738 Q470,780 494,940" stroke="#c99a62" stroke-width="10" fill="none" opacity=".5"/>
+            <ellipse cx="262" cy="648" rx="60" ry="72" fill="#120e0b"/>
+            <path d="M228,690 Q214,800 236,940 L292,940 Q312,800 298,690Z" fill="#120e0b"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 03 · 速写本 · 讲述：狼夹与断爪 -->
+    <div class="scene" data-n="3" data-zoom="0">
+      <div class="layer" data-depth="0.1">
+        <svg id="sketch" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <rect x="80" y="56" width="1460" height="830" rx="6" fill="#1e1a16" opacity=".45" filter="url(#soft)"/>
+          <rect x="70" y="40" width="1460" height="830" rx="6" fill="#f3f0e7"/>
+          <g id="g3rings"></g>
+          <circle cx="820" cy="470" r="200" fill="none" stroke="#b9b5ac" stroke-width="1.2" opacity=".5"/>
+          <path d="M520,520 L1120,520" stroke="#c4c0b6" stroke-width="1" opacity=".5"/>
+          <text class="hand" x="1160" y="150" font-size="44" fill="#57534c">若尔盖 · 四月</text>
+          <g id="wash3" transform="translate(560,210) scale(1.3)" opacity="0">
+            <g filter="url(#wc)">
+              <path d="M80,230 Q200,140 320,230 Q200,320 80,230Z" fill="#9aa3a8" opacity=".45"/>
+              <path d="M80,222 L-10,214 Q-26,230 -10,246 L80,238Z" fill="#7e878c" opacity=".55"/>
+              <path d="M320,222 L410,214 Q426,230 410,246 L320,238Z" fill="#7e878c" opacity=".55"/>
+              <path d="M178,236 Q172,200 178,176 Q160,150 170,126 Q186,108 200,110 Q214,108 230,126 Q240,150 222,176 Q228,200 222,236Z" fill="#7a6654" opacity=".6"/>
+            </g>
+            <ellipse cx="200" cy="238" rx="26" ry="7" fill="#8a4a35" opacity=".28" filter="url(#soft)"/>
+            <path d="M186,160 Q200,148 214,160 Q210,172 200,172 Q190,172 186,160Z" fill="#3a302a" opacity=".75"/>
+            <g fill="#3a302a" opacity=".75"><ellipse cx="176" cy="128" rx="6" ry="8"/><ellipse cx="192" cy="118" rx="6" ry="8"/><ellipse cx="209" cy="118" rx="6" ry="8"/><ellipse cx="225" cy="128" rx="6" ry="8"/></g>
+          </g>
+          <g id="pen3" transform="translate(560,210) scale(1.3)" fill="none" stroke="#4a4844" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" filter="url(#pencil)">
+            <path class="pen" d="M80,230 Q200,140 320,230"/>
+            <path class="pen" d="M80,230 Q200,320 320,230"/>
+            <path class="pen" d="M96,230 l10,-9 l10,9 l10,-9 l10,9 l10,-9 l10,9 l10,-9 l10,9"/>
+            <path class="pen" d="M234,230 l10,-9 l10,9 l10,-9 l10,9 l10,-9 l10,9 l10,-9 l10,9"/>
+            <path class="pen" d="M80,222 L-10,214 Q-26,230 -10,246 L80,238"/>
+            <path class="pen" d="M320,222 L410,214 Q426,230 410,246 L320,238"/>
+            <path class="pen" d="M410,246 q14,10 10,24 q-4,14 10,24 q14,10 10,24 q-4,14 10,24"/>
+            <path class="pen" d="M178,236 Q172,200 178,176 M222,236 Q228,200 222,176"/>
+            <path class="pen" d="M178,176 Q160,150 170,126 Q186,108 200,110 Q214,108 230,126 Q240,150 222,176"/>
+            <path class="pen" d="M186,160 Q200,148 214,160 Q210,172 200,172 Q190,172 186,160"/>
+            <path class="pen" d="M170,128 q-2,-14 6,-15 q8,1 6,15 M186,118 q-2,-14 6,-15 q8,1 6,15 M203,118 q-2,-14 6,-15 q8,1 6,15 M219,128 q-2,-14 6,-15 q8,1 6,15"/>
+            <path class="pen" d="M180,248 l4,8 l6,-5 l5,8 l6,-6 l5,7 l6,-5 l4,6"/>
+          </g>
+          <g id="nTrap" class="fade" opacity="0" fill="none" stroke="#6a665f" stroke-width="2" stroke-linecap="round">
+            <path d="M1140,560 Q1060,560 990,530"/><path d="M990,530 l16,-2 M990,530 l10,12"/>
+            <text class="hand" x="1150" y="572" font-size="38" fill="#57534c" stroke="none">狼夹 · 夹子是空的</text>
+          </g>
+          <g id="nPaw" class="fade" opacity="0" fill="none" stroke="#6a665f" stroke-width="2" stroke-linecap="round">
+            <path d="M1130,340 Q1000,330 880,370"/><path d="M880,370 l14,-10 M880,370 l16,4"/>
+            <text class="hand" x="1142" y="352" font-size="38" fill="#57534c" stroke="none">只剩一只前爪</text>
+          </g>
+          <text id="nBit" class="hand fade" x="1120" y="720" font-size="84" fill="#3c3934" opacity="0">自己咬断的</text>
+          <g filter="url(#wc)">
+            <rect x="190" y="700" width="96" height="54" fill="#b07a45" opacity=".8"/>
+            <rect x="310" y="700" width="96" height="54" fill="#3d55a0" opacity=".75"/>
+            <rect x="430" y="700" width="96" height="54" fill="#5b4232" opacity=".8"/>
+          </g>
+          <g class="hand" font-size="26" fill="#6a665f"><text x="212" y="792">赭石</text><text x="332" y="792">群青</text><text x="452" y="792">熟褐</text></g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 04 · 夜 · 石缝：公狼守在石缝里，藏狗在外 -->
+    <div class="scene" data-n="4" data-fx="700" data-zoom="0.07">
+      <div class="layer" data-depth="0.1">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="g4sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#171c2b"/><stop offset=".7" stop-color="#3a3f52"/></linearGradient></defs>
+          <rect width="1600" height="900" fill="url(#g4sky)"/>
+          <g id="g4stars"></g>
+          <path d="M0,420 L200,360 L420,300 L640,250 L820,230 L1000,280 L1200,330 L1400,300 L1600,360 L1600,900 L0,900Z" fill="#262833" filter="url(#wcFar)"/>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.55">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <path d="M-20,700 Q400,660 800,690 T1620,680 L1620,920 L-20,920Z" fill="#2f2f36" filter="url(#wc)"/>
+          <!-- the rock pile -->
+          <g filter="url(#wc)">
+            <path d="M560,700 Q540,560 640,500 Q720,470 770,520 L760,700Z" fill="#4b4a4f"/>
+            <path d="M840,700 L850,510 Q910,450 1000,500 Q1080,560 1050,700Z" fill="#46454b"/>
+            <path d="M650,520 Q700,400 820,390 Q930,392 960,470 Q900,500 850,512 L770,520 Q720,500 650,520Z" fill="#55535a"/>
+            <path d="M470,710 Q470,640 540,620 Q600,620 610,710Z" fill="#3d3c41"/>
+            <path d="M1020,710 Q1030,630 1100,620 Q1170,630 1170,710Z" fill="#3d3c41"/>
+          </g>
+          <path d="M770,520 L800,506 L848,514 L856,560 L840,620 L848,700 L758,700 L772,632 L756,572Z" fill="#0b0a0c"/>
+          <!-- the wolf, head out, ears pinned back: no human brows, only ears, eyes and lips -->
+          <g transform="translate(806,600)"><g class="pant">
+            <g transform="translate(-30,-50)"><g class="earflat"><path d="M0,0 L-30,-14 L-10,12Z" fill="#4a4540"/></g></g>
+            <g transform="translate(30,-50)"><g class="earflat" style="animation-direction:reverse"><path d="M0,0 L30,-14 L10,12Z" fill="#4a4540"/></g></g>
+            <path d="M-46,-30 Q-40,-58 -18,-62 Q0,-66 18,-62 Q40,-58 46,-30 Q54,-6 40,10 Q26,20 18,40 Q8,58 0,58 Q-8,58 -18,40 Q-26,20 -40,10 Q-54,-6 -46,-30Z" fill="#5d5650" filter="url(#fur)"/>
+            <path d="M-44,-4 Q-56,8 -48,20 M44,-4 Q56,8 48,20" stroke="#6e6760" stroke-width="7" fill="none" stroke-linecap="round" filter="url(#fur)"/>
+            <path d="M0,-62 L-7,-24 Q0,-18 7,-24Z" fill="#3a3531" opacity=".55"/>
+            <ellipse cx="0" cy="30" rx="15" ry="24" fill="#8b8078" filter="url(#fur)"/>
+            <ellipse cx="0" cy="46" rx="7" ry="5" fill="#141210"/>
+            <g class="glint"><path d="M-27,-12 Q-19,-20 -8,-16 Q-18,-9 -27,-12Z" fill="#d6bf84"/><path d="M8,-16 Q19,-20 27,-12 Q18,-9 8,-16Z" fill="#d6bf84"/></g>
+            <circle cx="-17" cy="-14" r="2.6" fill="#120f0c"/><circle cx="17" cy="-14" r="2.6" fill="#120f0c"/>
+            <g class="snarl"><path d="M-12,54 Q0,50 12,54" stroke="#2a2522" stroke-width="2.6" fill="none"/></g>
+            <path class="teeth" d="M-9,55 l2.5,6 l2.5,-6 M4,55 l2.5,6 l2.5,-6" fill="#e8e0cc"/>
+          </g></g>
+          <path d="M770,520 L848,514 L846,580 Q806,548 762,580Z" fill="#000" opacity=".4"/>
+          <g id="g4dogs"></g>
+          <!-- hunters arrive with a knife lashed to a horse stick -->
+          <g id="men4" class="fade" opacity="0">
+            <g transform="translate(1250,700) scale(2.4)" fill="#151417">
+              <circle cx="0" cy="-41" r="4.6"/><path d="M-7,-43 h14" stroke="#151417" stroke-width="2"/>
+              <path d="M-6,-21 Q-7,-34 -4,-36 L4,-36 Q7,-34 6,-21Z"/><path d="M-2,-20 L-3,0 M2,-20 L3,0" stroke="#151417" stroke-width="3.2" stroke-linecap="round"/>
+            </g>
+            <g transform="translate(1330,704) scale(2.2)" fill="#151417">
+              <circle cx="0" cy="-41" r="4.6"/>
+              <path d="M-6,-21 Q-7,-34 -4,-36 L4,-36 Q7,-34 6,-21Z"/><path d="M-2,-20 L-3,0 M2,-20 L3,0" stroke="#151417" stroke-width="3.2" stroke-linecap="round"/>
+            </g>
+            <g id="pole4"><path d="M1240,628 L1010,616" stroke="#1d1b1e" stroke-width="5" stroke-linecap="round"/><path id="blade4" d="M1010,616 L966,614" stroke="#c9ced6" stroke-width="4" stroke-linecap="round" opacity=".7"/></g>
+          </g>
+          <rect id="dark4" x="-100" y="-100" width="1800" height="1100" fill="#050506" opacity="0"/>
+          <!-- one eye, still staring -->
+          <g id="eye4" opacity="0"><ellipse cx="789" cy="586" rx="18" ry="8" fill="#d6bf84" opacity=".25" filter="url(#soft)"/><path d="M779,588 Q787,580 798,584 Q788,591 779,588Z" fill="#d6bf84"/><circle cx="789" cy="586" r="2.6" fill="#120f0c"/></g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="1.3">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><g id="g4fg" filter="url(#dofBig)"></g></svg>
+      </div>
+    </div>
+
+    <!-- 05 · 特写 · 茶碗与佛珠 -->
+    <div class="scene" data-n="5" data-fx="700,960" data-zoom="0.05">
+      <div class="layer" data-depth="0.2">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <rect width="1600" height="900" fill="#3a2a1e"/>
+          <g filter="url(#dofBig)">
+            <ellipse class="glow" cx="1420" cy="560" rx="260" ry="200" fill="#e98a3a" opacity=".5"/>
+            <ellipse cx="300" cy="420" rx="180" ry="260" fill="#241913"/>
+            <ellipse cx="720" cy="140" rx="200" ry="120" fill="#7a5638" opacity=".6"/>
+            <rect x="0" y="760" width="1600" height="160" fill="#5a3b26"/>
+          </g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.5">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <!-- amala's hand and beads -->
+          <path d="M1320,300 Q1160,330 1050,410 L1080,520 Q1200,470 1340,470Z" fill="#3b2f2a" filter="url(#wc)"/>
+          <path d="M1050,410 L1080,520" stroke="#8b6a3a" stroke-width="10" stroke-linecap="round"/>
+          <g id="beads5">
+            <path class="beads big" d="M960,450 C880,530 900,708 990,712 C1080,712 1094,566 1034,474 C1014,450 984,440 960,450Z" fill="none" stroke="#6e3b2a" stroke-width="17" stroke-linecap="round" stroke-dasharray="0 26"/>
+            <path d="M990,712 l0,22" stroke="#6e3b2a" stroke-width="3"/>
+            <circle cx="990" cy="738" r="12" fill="#a33a2a"/>
+            <g transform="translate(990,748)"><g class="swish"><path d="M0,0 l-6,46 M0,0 l0,48 M0,0 l6,46 M0,0 l-3,47 M0,0 l3,47" stroke="#b5523e" stroke-width="2.4"/></g></g>
+            <path d="M1000,440 Q1046,420 1086,452 Q1102,490 1070,512 Q1020,520 990,494 Q976,466 1000,440Z" fill="#9c6b47" filter="url(#wc)"/>
+            <g fill="#946443"><path d="M992,452 Q960,452 952,470 Q960,482 990,474Z"/><path d="M990,474 Q956,480 952,498 Q964,508 994,494Z"/></g>
+            <g transform="translate(1004,436)"><g class="thumb big"><path d="M0,0 Q-28,-6 -40,8 Q-34,20 -6,16Z" fill="#a87650"/></g></g>
+            <path d="M1022,470 q8,4 16,2 M1018,486 q10,4 20,1" stroke="#7a4f33" stroke-width="1.4" fill="none"/>
+          </g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="1">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <g id="bowl5">
+            <path d="M420,940 Q450,780 520,730 L572,770 Q520,830 520,940Z" fill="#e3ddd1" filter="url(#wc)"/><path d="M470,860 q20,-30 50,-60 M500,900 q14,-40 40,-80" stroke="#c3baa9" stroke-width="2" fill="none"/>
+            <path d="M960,940 Q930,780 860,730 L812,770 Q862,830 862,940Z" fill="#e3ddd1" filter="url(#wc)"/><path d="M910,860 q-20,-30 -50,-60" stroke="#c3baa9" stroke-width="2" fill="none"/>
+            <path d="M560,650 Q560,768 690,778 Q820,768 820,650Z" fill="#7a5232" filter="url(#wc)"/>
+            <path d="M600,700 q30,14 60,4 t60,4 t60,-6" stroke="#5e3c22" stroke-width="3" fill="none" opacity=".6"/>
+            <ellipse cx="690" cy="650" rx="130" ry="27" fill="#5e3c22"/>
+            <ellipse cx="690" cy="652" rx="116" ry="21" fill="#c9a77a"/>
+            <g fill="#ecd8ac" opacity=".75"><ellipse cx="650" cy="650" rx="9" ry="3"/><ellipse cx="712" cy="656" rx="6" ry="2"/><ellipse cx="736" cy="646" rx="4" ry="1.6"/></g>
+            <path d="M548,700 Q532,650 566,628 Q590,640 588,700 Q580,740 560,740Z" fill="#d6ab88" filter="url(#wc)"/><path d="M540,736 Q562,746 586,734" stroke="#8e6bb0" stroke-width="9" fill="none" stroke-linecap="round"/>
+            <path d="M832,700 Q848,650 814,628 Q790,640 792,700 Q800,740 820,740Z" fill="#d6ab88" filter="url(#wc)"/>
+            <path class="steam" d="M660,630 q-12,-20 0,-40 q12,-20 0,-40" stroke="#f3e9d8" stroke-width="6" fill="none"/>
+            <path class="steam" style="animation-delay:-1.4s" d="M700,630 q-12,-20 0,-40 q12,-20 0,-40" stroke="#f3e9d8" stroke-width="5" fill="none"/>
+            <path class="steam" style="animation-delay:-2.7s" d="M730,632 q-12,-20 0,-40 q12,-20 0,-40" stroke="#f3e9d8" stroke-width="4" fill="none"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 06 · 大全景 · 空草场：只有围栏和羊，没有野生动物 -->
+    <div class="scene" data-n="6" data-fx="1000" data-zoom="0.03">
+      <div class="layer" data-depth="0">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="g6sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c3cfd4"/><stop offset=".6" stop-color="#efeadb"/></linearGradient></defs>
+          <rect width="1600" height="900" fill="url(#g6sky)"/>
+          <ellipse cx="400" cy="140" rx="400" ry="120" fill="#fff7e2" opacity=".6" filter="url(#bloom)"/>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.15">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <g transform="translate(800,230)"><g class="orbit"><g transform="translate(150,0)"><path d="M-16,0 Q-7,-6 0,0 Q7,-6 16,0 Q7,-2 0,3 Q-7,-2 -16,0Z" fill="#4a423a"/></g></g></g>
+          <path d="M0,520 Q260,470 520,500 T1040,480 T1600,500 L1600,600 L0,600Z" fill="#b8b9a8" filter="url(#wcFar)"/>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.5">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <path d="M-20,560 Q400,540 800,556 T1620,548 L1620,920 L-20,920Z" fill="#d6c595" filter="url(#wc)"/>
+          <g id="g6mounds"></g>
+          <g id="g6sheep"></g>
+          <g id="g6fence"></g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="1.1">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <path id="p6fg" fill="#b29d69" filter="url(#wc)"/>
+          <g id="g6fg"></g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 07 · 长焦 · 月夜山头：母狼哀嚎 -->
+    <div class="scene" data-n="7" data-fx="800" data-zoom="0.05">
+      <div class="layer" data-depth="0">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="g7sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#101727"/><stop offset=".55" stop-color="#28324c"/><stop offset=".8" stop-color="#4a5570"/></linearGradient></defs>
+          <rect width="1600" height="900" fill="url(#g7sky)"/>
+          <g id="g7stars"></g>
+          <ellipse cx="1040" cy="270" rx="220" ry="200" fill="#c9d3e3" opacity=".35" filter="url(#bloom)"/>
+          <circle cx="1040" cy="270" r="86" fill="#e8ecef"/>
+          <g fill="#cfd5dc" opacity=".6"><circle cx="1010" cy="250" r="16"/><circle cx="1068" cy="300" r="11"/><circle cx="1060" cy="236" r="7"/></g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.2">
+        <svg class="drift" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <g filter="url(#wcFar)" fill="#5a6582" opacity=".55"><ellipse cx="400" cy="300" rx="320" ry="12"/><ellipse cx="1200" cy="400" rx="300" ry="10"/><ellipse cx="760" cy="200" rx="260" ry="9"/></g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.45">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <path d="M0,700 Q300,660 520,610 Q700,560 800,548 Q920,560 1100,620 Q1350,680 1600,690 L1600,920 L0,920Z" fill="#171a23" filter="url(#wc)"/>
+          <!-- mani stones and a torn flag where the male was killed -->
+          <g transform="translate(1250,672)" fill="#22252f">
+            <ellipse cx="0" cy="0" rx="34" ry="12"/><ellipse cx="0" cy="-12" rx="22" ry="9"/><ellipse cx="0" cy="-22" rx="12" ry="6"/>
+            <rect x="-1" y="-70" width="2.4" height="50"/>
+            <g transform="translate(1,-68)"><g class="flag"><path d="M0,0 L22,4 L18,12 L0,10Z" fill="#3a3f52"/></g></g>
+          </g>
+          <!-- the she-wolf: long legs, deep narrow chest, tucked waist, heavy neck ruff, bushy tail hanging low; backlit by the moon -->
+          <g transform="translate(790,556) scale(.92)">
+            <g fill="#1b1f2b" filter="url(#fur)">
+              <path d="M-48,-92 C-44,-62 -42,-40 -44,-22 L-41,-6 Q-38,0 -48,0 L-53,0 Q-53,-8 -55,-24 C-59,-50 -63,-74 -65,-90Z"/>
+              <path d="M58,-112 C86,-120 104,-104 100,-80 C100,-66 106,-50 110,-38 L104,-30 C102,-20 102,-10 104,-4 Q106,0 96,0 L90,0 Q92,-8 92,-20 C92,-34 86,-50 80,-62 C72,-76 62,-92 58,-112Z"/>
+            </g>
+            <g fill="#0d0f16">
+              <g transform="translate(118,-132)"><g class="tailsway"><path filter="url(#fur)" d="M0,-4 C20,0 32,22 34,48 C36,68 32,84 24,94 Q18,98 16,90 C18,72 14,48 6,28 C2,18 -4,8 -6,2Z"/></g></g>
+              <g class="chest"><path filter="url(#fur)" d="M-92,-100 C-100,-122 -92,-146 -74,-156 C-60,-164 -40,-160 -20,-150 C20,-142 70,-144 108,-140 C124,-138 132,-128 130,-116 C132,-100 128,-84 122,-74 L116,-74 C100,-82 80,-96 60,-98 C30,-96 0,-86 -30,-80 C-50,-76 -70,-78 -84,-86Z"/></g>
+              <path filter="url(#fur)" d="M-70,-92 C-66,-60 -62,-40 -62,-22 L-60,-6 Q-58,0 -68,0 L-75,0 Q-73,-6 -73,-22 C-77,-50 -85,-74 -88,-92Z"/>
+              <path filter="url(#fur)" d="M78,-122 C110,-130 130,-110 125,-82 C123,-68 129,-52 135,-38 L129,-30 C127,-20 127,-10 129,-4 Q131,0 121,0 L114,0 Q116,-8 116,-20 C116,-34 110,-50 104,-62 C96,-74 84,-92 78,-122Z"/>
+              <path filter="url(#fur)" d="M-94,-98 C-112,-118 -112,-150 -100,-170 L-72,-176 C-60,-164 -56,-150 -60,-138Z"/>
+              <g transform="translate(-30,-149)"><g class="tuft"><path d="M0,0 l-3,-8 l5,4 l2,-8 l3,8Z"/></g></g>
+              <g transform="translate(40,-141)"><g class="tuft" style="animation-delay:-.6s"><path d="M0,0 l-3,-7 l5,3 l2,-7 l3,7Z"/></g></g>
+              <g transform="translate(-106,-150)"><g class="tuft" style="animation-delay:-.3s"><path d="M0,0 l-9,-2 l5,-4 l-8,-4 l9,-1Z"/></g></g>
+            </g>
+            <path d="M-60,-160 C-40,-160 -20,-150 0,-146 C30,-142 70,-144 108,-140 C120,-138 128,-132 130,-122" stroke="#9fb0cf" stroke-width="2.2" fill="none" opacity=".45"/>
+            <path d="M118,-136 C138,-130 150,-108 152,-84" stroke="#9fb0cf" stroke-width="2" fill="none" opacity=".4"/>
+            <!-- head and upper neck turn around the base of the neck -->
+            <g transform="translate(-80,-150)"><g class="howl"><g transform="translate(80,150)">
+              <path d="M-92,-238 L-90,-262 L-104,-246Z" fill="#1b1f2b"/>
+              <path fill="#0d0f16" filter="url(#fur)" d="M-62,-150 C-60,-176 -62,-196 -70,-210 C-74,-220 -80,-230 -88,-238 C-94,-244 -100,-246 -106,-246 L-130,-268 Q-138,-274 -140,-266 L-126,-252 L-136,-256 Q-124,-240 -114,-232 Q-112,-226 -116,-220 C-130,-208 -128,-190 -118,-176 L-130,-178 L-115,-166 L-126,-158 L-107,-151 L-112,-141 L-92,-136 L-86,-128Z"/>
+              <path d="M-82,-232 L-74,-258 L-96,-244Z" fill="#0d0f16"/>
+              <path d="M-74,-258 L-82,-232 M-88,-238 C-94,-244 -100,-246 -106,-246 L-130,-268" stroke="#9fb0cf" stroke-width="2" fill="none" opacity=".5"/>
+              <path d="M-110,-236 l8,2" stroke="#46536f" stroke-width="2.2" stroke-linecap="round"/>
+              <circle class="vapor" cx="-142" cy="-274" r="10" fill="#c9d3e3"/>
+              <circle class="vapor" style="animation-delay:.25s" cx="-138" cy="-280" r="7" fill="#c9d3e3"/>
+            </g></g></g>
+          </g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="1.2">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><g id="g7fg" filter="url(#dofBig)"></g></svg>
+      </div>
+    </div>
+
+    <!-- 08 · 近景 · 炉火：牧民大哥讲毒肉，阿妈的佛珠停住 -->
+    <div class="scene" data-n="8" data-fx="640,960" data-zoom="0.05">
+      <div class="layer" data-depth="0.15">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <defs><radialGradient id="g8in" cx=".5" cy=".95" r=".9"><stop offset="0" stop-color="#5a3420"/><stop offset=".5" stop-color="#2a1a10"/><stop offset="1" stop-color="#110b07"/></radialGradient></defs>
+          <rect width="1600" height="900" fill="url(#g8in)"/>
+          <ellipse id="glow8" class="glow" cx="800" cy="860" rx="420" ry="260" fill="#e9853a" opacity=".55" filter="url(#bloom)"/>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.45">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <!-- the herder brother in profile, chewing -->
+          <path d="M440,940 Q450,720 530,656 Q590,624 650,650 Q706,712 716,940Z" fill="#2e241d" filter="url(#wc)"/>
+          <path d="M650,650 Q706,712 716,940" stroke="#e0904a" stroke-width="4" fill="none" opacity=".55"/>
+          <g transform="translate(600,616)">
+            <path d="M-10,-110 Q30,-112 44,-80 Q52,-66 58,-56 Q50,-52 48,-46 Q52,-38 46,-32 L-24,-14 Q-38,-44 -34,-80 Q-30,-104 -10,-110Z" fill="#6e4a32"/>
+            <path class="chew" d="M44,-32 Q40,-14 24,-6 Q2,0 -20,-12 L-24,-16 Q10,-24 44,-32Z" fill="#6a4630"/>
+            <path d="M44,-80 Q52,-66 58,-56 Q50,-52 48,-46 Q52,-38 46,-32 Q40,-14 24,-6" stroke="#f0a45c" stroke-width="3" fill="none" opacity=".75"/>
+            <path d="M-52,-104 Q4,-120 62,-104 Q56,-96 4,-100 Q-46,-96 -52,-104Z" fill="#1d1712"/><path d="M-26,-104 Q-24,-140 6,-140 Q34,-140 32,-104Z" fill="#1d1712"/>
+            <path d="M24,-72 q6,-2 10,1" stroke="#1a120c" stroke-width="2.6" stroke-linecap="round"/>
+            <ellipse cx="14" cy="-62" rx="8" ry="6" fill="#b8664d" opacity=".3"/>
+          </g>
+          <ellipse cx="664" cy="720" rx="16" ry="12" fill="#6e4a32"/><ellipse cx="672" cy="708" rx="12" ry="9" fill="#d8c6a0" filter="url(#fur)"/>
+          <!-- amala, head bowed -->
+          <path d="M840,940 Q850,710 910,660 Q960,636 1010,660 Q1070,710 1080,940Z" fill="#2f241e" filter="url(#wc)"/>
+          <path d="M910,660 Q850,710 840,940" stroke="#e0904a" stroke-width="4" fill="none" opacity=".5"/>
+          <g transform="translate(958,622)"><g class="nod" style="animation-duration:9s">
+            <path d="M-42,-14 Q-48,-80 -2,-88 Q44,-80 38,-14 Q28,6 -2,8 Q-32,6 -42,-14Z" fill="#1d1612"/>
+            <ellipse cx="-6" cy="-40" rx="28" ry="34" fill="#7a5236"/>
+            <path d="M-34,-40 Q-40,-14 -24,0" stroke="#f0a45c" stroke-width="3" fill="none" opacity=".65"/>
+            <path d="M-38,-52 Q-4,-84 32,-52 Q16,-66 -4,-66 Q-24,-66 -38,-52Z" fill="#3a2620"/>
+            <path d="M-22,-38 q6,3 12,0 M0,-38 q6,3 12,0" stroke="#1a120c" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+            <path d="M-12,-16 q6,2 12,0" stroke="#4a2c1e" stroke-width="2" fill="none"/>
+          </g></g>
+          <g id="beads8">
+            <ellipse cx="930" cy="770" rx="18" ry="13" fill="#7a5236"/>
+            <path class="beads" d="M922,778 a28,34 0 1,0 56,0 a28,34 0 1,0 -56,0" fill="none" stroke="#4e2a1e" stroke-width="7" stroke-linecap="round" stroke-dasharray="0 10.5"/>
+            <ellipse cx="972" cy="776" rx="18" ry="13" fill="#7a5236"/>
+            <g class="thumb"><ellipse cx="940" cy="764" rx="6" ry="4.5" fill="#86593b"/></g>
+          </g>
+          <!-- the fire -->
+          <g fill="#1a120c"><path d="M690,900 L910,860 L916,876 L700,916Z"/><path d="M700,860 L900,904 L890,918 L694,876Z"/></g>
+          <g id="fire8" transform="translate(800,878)">
+            <path class="flame" d="M-60,0 Q-70,-70 -20,-120 Q-10,-70 14,-54 Q24,-100 54,-112 Q70,-40 54,0Z" fill="#d9662a"/>
+            <path class="flame" style="animation-delay:-.35s" d="M-36,0 Q-40,-46 -10,-78 Q0,-44 16,-38 Q26,-62 38,-68 Q46,-24 34,0Z" fill="#f2a54a"/>
+            <path class="flame" style="animation-delay:-.6s" d="M-14,0 Q-14,-22 2,-40 Q14,-20 16,0Z" fill="#f8d27a"/>
+          </g>
+          <g id="g8embers"></g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 09 · 贴地 · 狼窝：母狼舔着六只没睁眼的狼崽 -->
+    <div class="scene" data-n="9" data-fx="720,880" data-zoom="0.06">
+      <div class="layer" data-depth="0.2">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <defs><radialGradient id="g9in" cx=".6" cy=".55" r=".75"><stop offset="0" stop-color="#6e5a46"/><stop offset=".45" stop-color="#36291e"/><stop offset="1" stop-color="#100b08"/></radialGradient></defs>
+          <rect width="1600" height="900" fill="url(#g9in)"/>
+          <ellipse cx="1100" cy="560" rx="420" ry="140" fill="#cbb08a" opacity=".3" filter="url(#bloom)"/>
+          <path d="M-20,660 Q800,600 1620,660 L1620,920 L-20,920Z" fill="#45362a" opacity=".85" filter="url(#wc)"/>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.5">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <g id="den9">
+            <!-- mother lying on her side -->
+            <path d="M1214,650 Q1262,716 1196,752 Q1130,770 1070,744" stroke="#585048" stroke-width="30" fill="none" stroke-linecap="round" filter="url(#fur)"/>
+            <g class="mbreath">
+              <path d="M780,640 Q790,560 900,550 Q1000,544 1080,558 Q1200,568 1232,630 Q1244,700 1160,722 Q1000,742 860,722 Q788,706 780,640Z" fill="#6c6157" filter="url(#fur)"/>
+              <path d="M800,592 Q900,540 1060,552 Q1190,562 1226,620 Q1120,580 980,584 Q880,588 812,616Z" fill="#4c443d" opacity=".85" filter="url(#fur)"/>
+              <path d="M870,712 Q1000,728 1140,708" stroke="#9a8c7c" stroke-width="12" fill="none" opacity=".35" filter="url(#fur)"/>
+              <path d="M1140,600 Q1190,630 1186,690" stroke="#5c534a" stroke-width="26" fill="none" opacity=".6" filter="url(#fur)"/>
+            </g>
+            <path d="M1170,700 Q1196,726 1214,742" stroke="#5c534a" stroke-width="22" fill="none" stroke-linecap="round" filter="url(#fur)"/>
+            <path d="M840,680 L760,720" stroke="#5f564d" stroke-width="22" stroke-linecap="round" filter="url(#fur)"/>
+            <!-- head, licking -->
+            <g transform="translate(800,600)"><g class="lick">
+              <path d="M30,-48 L40,-92 L60,-50Z" fill="#544b43" filter="url(#fur)"/>
+              <ellipse cx="0" cy="-10" rx="76" ry="54" fill="#6f645a" filter="url(#fur)"/>
+              <path d="M-40,0 Q-96,20 -112,46 Q-100,60 -70,52 Q-40,40 -10,30Z" fill="#7d7166" filter="url(#fur)"/>
+              <ellipse cx="-112" cy="44" rx="10" ry="8" fill="#1a1612"/>
+              <ellipse class="tongue" cx="-104" cy="58" rx="9" ry="5" fill="#b0706a"/>
+              <ellipse cx="-30" cy="18" rx="30" ry="16" fill="#a3968a" opacity=".5" filter="url(#fur)"/>
+              <g id="eye9" transform="translate(-28,-18)"><g class="eye"><path d="M-12,0 Q0,-9 12,0 Q0,5 -12,0Z" fill="#b39a5e"/><circle r="3" fill="#15110d"/></g></g>
+              <path d="M-42,-20 Q-28,-30 -14,-22" stroke="#2e2620" stroke-width="2.6" fill="none"/>
+            </g></g>
+            <g id="g9cubs"></g>
+          </g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.8">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice"><g id="g9motes"></g></svg>
+      </div>
+      <div class="layer" data-depth="1.2">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <path fill-rule="evenodd" d="M-100,-100 H1700 V1000 H-100Z M80,500 a720,430 0 1,0 1440,0 a720,430 0 1,0 -1440,0Z" fill="#0d0907" filter="url(#wcFar)"/>
+          <g stroke="#2b2018" fill="none" stroke-width="4" stroke-linecap="round"><path d="M520,60 q20,60 -10,120 q-20,40 10,80"/><path d="M1100,40 q-10,70 20,130"/></g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 10 · 特写 · 手心：阿妈把佛珠放进我手里 -->
+    <div class="scene" data-n="10" data-fx="800" data-zoom="0.04">
+      <div class="layer" data-depth="0.2">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <rect width="1600" height="900" fill="#4a3424"/>
+          <g filter="url(#dofBig)">
+            <rect x="1100" y="0" width="380" height="900" fill="#f4e2bb" opacity=".8"/>
+            <ellipse cx="1280" cy="500" rx="300" ry="420" fill="#fff1d2" opacity=".6"/>
+            <ellipse cx="380" cy="420" rx="260" ry="320" fill="#2a1d14"/>
+          </g>
+          <ellipse cx="820" cy="560" rx="380" ry="240" fill="#f2d39e" opacity=".25" filter="url(#bloom)"/>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.6">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <!-- my open palm -->
+          <g transform="translate(800,690)">
+            <path d="M-100,260 L-74,70 Q0,50 74,70 L100,260Z" fill="#e3ddd1" filter="url(#wc)"/><path d="M-60,240 q10,-80 20,-150 M40,240 q-6,-80 -14,-150" stroke="#c3baa9" stroke-width="2" fill="none"/>
+            <path d="M-74,70 Q0,50 74,70" stroke="#cfc6b6" stroke-width="8" fill="none"/><path d="M-70,52 Q0,34 70,52" stroke="#8e6bb0" stroke-width="12" fill="none" stroke-linecap="round"/>
+            <path d="M-74,50 Q-86,-14 -64,-64 Q0,-86 64,-64 Q88,-14 74,50 Q0,78 -74,50Z" fill="#d4a985" filter="url(#wc)"/>
+            <g fill="#d9b08d" filter="url(#wc)">
+              <rect x="-62" y="-170" width="28" height="118" rx="14"/><rect x="-30" y="-196" width="28" height="140" rx="14"/>
+              <rect x="2" y="-190" width="28" height="134" rx="14"/><rect x="34" y="-160" width="26" height="106" rx="13"/>
+              <path d="M-70,20 Q-120,-10 -132,-60 Q-122,-74 -106,-62 Q-92,-30 -60,-10Z"/>
+            </g>
+            <path d="M-50,-20 Q0,-36 50,-26 M-56,10 Q-10,-6 30,6 M-20,-50 Q-30,0 -10,40" stroke="#b48463" stroke-width="2" fill="none" opacity=".7"/>
+            <path d="M-48,-130 h12 M-16,-150 h12 M16,-146 h12 M46,-120 h10" stroke="#b48463" stroke-width="1.6" opacity=".6"/>
+            <g id="beadsMine" opacity="0">
+              <path d="M-60,-10 Q-30,-60 20,-50 Q66,-30 50,20 Q20,56 -30,40 Q-70,24 -60,-10Z" fill="none" stroke="#6e3b2a" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 18"/>
+              <circle cx="-30" cy="40" r="9" fill="#a33a2a"/>
+              <path d="M-30,48 l-14,40 M-30,48 l-8,44 M-30,48 l-2,44" stroke="#b5523e" stroke-width="2.2"/>
+            </g>
+          </g>
+          <!-- amala's hands bringing the beads -->
+          <g id="herHands">
+            <path d="M1180,120 Q1060,200 1010,300 L1080,350 Q1150,260 1260,200Z" fill="#3b2f2a" filter="url(#wc)"/>
+            <path d="M1010,300 L1080,350" stroke="#8b6a3a" stroke-width="10" stroke-linecap="round"/>
+            <path d="M1006,300 Q960,300 940,340 Q944,380 990,384 Q1040,380 1060,346Z" fill="#9c6b47" filter="url(#wc)"/>
+            <g fill="#946443"><path d="M950,330 Q920,336 914,358 Q926,368 952,356Z"/><path d="M956,356 Q928,368 928,388 Q942,394 966,376Z"/></g>
+            <g id="beadsHers">
+              <path d="M930,350 C880,420 900,540 960,548 C1020,548 1020,440 990,380" fill="none" stroke="#6e3b2a" stroke-width="12" stroke-linecap="round" stroke-dasharray="0 18"/>
+              <circle cx="960" cy="552" r="9" fill="#a33a2a"/>
+              <g transform="translate(960,560)"><g class="swish"><path d="M0,0 l-5,40 M0,0 l0,42 M0,0 l5,40" stroke="#b5523e" stroke-width="2.2"/></g></g>
+            </g>
+          </g>
+          <!-- her two hands closing around mine -->
+          <g id="herClasp" opacity="0">
+            <path d="M560,520 Q640,470 720,520 Q760,580 720,660 Q650,700 580,650 Q540,600 560,520Z" fill="#9c6b47" filter="url(#wc)"/>
+            <path d="M1040,520 Q960,470 880,520 Q840,580 880,660 Q950,700 1020,650 Q1060,600 1040,520Z" fill="#9c6b47" filter="url(#wc)"/>
+            <path d="M600,560 q30,-10 60,0 M610,590 q30,-8 60,2 M940,560 q30,-10 60,0 M930,590 q30,-8 60,2" stroke="#7a4f33" stroke-width="1.6" fill="none"/>
+            <path d="M560,520 Q480,440 420,360 L360,420 Q440,520 520,600Z" fill="#3b2f2a" filter="url(#wc)"/>
+            <path d="M1040,520 Q1120,440 1180,360 L1240,420 Q1160,520 1080,600Z" fill="#3b2f2a" filter="url(#wc)"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 11 · 远景 · 午后：出发，阿妈倚门的身影渐渐模糊 -->
+    <div class="scene" data-n="11" data-fx="720,1080" data-zoom="0.02">
+      <div class="layer" data-depth="0">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <defs><linearGradient id="g11sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c2ccce"/><stop offset=".55" stop-color="#f1dfb8"/></linearGradient></defs>
+          <rect width="1600" height="900" fill="url(#g11sky)"/>
+          <ellipse cx="1340" cy="250" rx="360" ry="170" fill="#ffe9bd" opacity=".75" filter="url(#bloom)"/>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.2">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <path d="M0,540 L160,500 L320,520 L520,470 L700,500 L900,460 L1100,490 L1300,456 L1600,500 L1600,600 L0,600Z" fill="#b2ad9e" filter="url(#wcFar)"/>
+          <ellipse class="haze" cx="1100" cy="560" rx="420" ry="18" fill="#f7e9c8" filter="url(#soft)"/>
+        </svg>
+      </div>
+      <div class="layer" data-depth="0.55">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <path d="M-20,566 Q400,550 800,570 T1620,556 L1620,920 L-20,920Z" fill="#cfb87f" filter="url(#wc)"/>
+          <path d="M760,700 C860,680 900,640 1000,620 S1180,580 1300,566" fill="none" stroke="#b9a275" stroke-width="16" stroke-linecap="round" filter="url(#wc)"/>
+          <g id="g11mid"></g>
+          <!-- the tent, closer now -->
+          <path d="M520,690 L580,570 Q680,520 790,546 L850,690Z" fill="#3b332c" filter="url(#wc)"/>
+          <path d="M580,570 Q690,560 790,546" stroke="#2a241f" stroke-width="3" fill="none"/>
+          <path d="M520,690 L470,704 M850,690 L900,704 M580,570 L500,600" stroke="#5a4e42" stroke-width="2"/>
+          <rect x="660" y="606" width="56" height="84" fill="#15110e"/>
+          <path class="steam" d="M690,540 q-10,-16 0,-32 q10,-16 0,-32" stroke="#f3efe6" stroke-width="6" fill="none" style="animation-duration:5s"/>
+          <path d="M790,546 Q860,546 930,560" stroke="#6b5f52" stroke-width="1.2" fill="none"/>
+          <rect x="928" y="520" width="3" height="170" fill="#5a4e42"/>
+          <g id="g11flags"></g>
+          <!-- amala leaning in the doorway: a sharp copy and a blurred copy cross-fade -->
+          <g id="amaSharp">
+            <g id="amaDoor">
+              <path d="M668,690 Q670,630 684,612 Q694,604 704,612 Q714,630 714,690Z" fill="#3b2f2a"/>
+              <path d="M672,652 Q690,658 710,652 L711,660 Q690,666 671,660Z" fill="#8b3b2e"/>
+              <ellipse cx="694" cy="598" rx="9" ry="11" fill="#a9764f"/>
+              <path d="M684,592 Q694,580 704,592 Q700,586 694,586 Q688,586 684,592Z" fill="#2a211c"/>
+              <path d="M684,596 Q682,610 686,620 M704,596 Q706,610 702,620" stroke="#2a211c" stroke-width="3" fill="none"/>
+              <path d="M708,616 Q716,612 716,606" stroke="#3b2f2a" stroke-width="6" stroke-linecap="round" fill="none"/>
+            </g>
+          </g>
+          <use id="amaBlur" href="#amaDoor" filter="url(#haze)" opacity="0"/>
+          <!-- the mastiff by the tent -->
+          <g transform="translate(470,690)">
+            <ellipse cx="0" cy="-14" rx="42" ry="17" fill="#241d18" filter="url(#fur)"/>
+            <g transform="translate(-34,-22)"><g class="nod" style="animation-duration:6s"><ellipse cx="-12" cy="-6" rx="17" ry="14" fill="#2a221c" filter="url(#fur)"/><path d="M-22,-16 l-6,10 l10,-2Z" fill="#1c1612"/><ellipse cx="-24" cy="-2" rx="9" ry="6" fill="#3a2f27"/></g></g>
+            <g transform="translate(40,-18)"><g class="swish"><path d="M0,0 Q20,-14 16,-32" stroke="#241d18" stroke-width="9" fill="none" stroke-linecap="round" filter="url(#fur)"/></g></g>
+          </g>
+          <g id="w11"></g>
+        </svg>
+      </div>
+      <div class="layer" data-depth="1.1">
+        <svg viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+          <path id="p11fg" fill="#a99055" filter="url(#wc)"/>
+          <g id="g11fg"></g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="vig"></div>
+    <div class="grain"></div>
+    <div class="narr hide"><div class="card"><div class="txt" aria-hidden="true"></div><div class="foot"><div class="count" aria-hidden="true"></div><div class="nav"><button type="button" data-step="-1">‹ 上一句</button><button type="button" data-step="1">下一句 ›</button></div></div></div></div>
+    <div class="shot" aria-hidden="true"><span id="shotLabel">镜头 01 · 大全景 · 正午</span><span class="geo">若尔盖 N33°35′ E102°58′</span></div>
+  </div>
+
+  <div class="beats">
+    <section class="beat title-beat" data-s="1">
+      <div class="title-block">
+        <p class="eyebrow">重返狼群 · 第一章 · 第一部分</p>
+        <h1>草原传闻</h1>
+        <p class="lede">根据李微漪《重返狼群》第一章改编。往下滑动，或者切换到点击模式，故事会慢慢展开。</p>
+        <div class="pick">
+          <button class="snd-big" type="button" data-sound aria-pressed="false">开启声音 · 建议戴耳机</button>
+          <span class="pick-mode"><span class="pick-label">阅读方式</span>
+          <span class="modes" role="group" aria-label="阅读方式"><button type="button" data-mode="scroll" aria-pressed="true">滑动</button><button type="button" data-mode="click" aria-pressed="false">点击</button></span></span>
+        </div>
+        <div class="hint" id="hint">向下滑动</div>
+      </div>
+    </section>
+    <section class="beat" data-s="1"><div class="card"><p>四月的若尔盖，海拔将近四千米。空气稀薄，太阳很毒，风从早吹到晚，草原上几乎看不到一棵树。</p></div></section>
+    <section class="beat" data-s="1"><div class="card"><p>藏语里，“若尔盖”的意思是牦牛喜欢的地方。我背着画夹走了一上午，水早就喝完了。</p></div></section>
+    <section class="beat" data-s="1"><div class="card"><p>终于看见一户牧民家。我推门进去，想讨口水喝。</p></div></section>
+
+    <section class="beat" data-s="2" data-tone="dark"><div class="card"><p>老阿妈端出酥油茶，又揉了一块糌粑递给我。几个会说汉话的牧民围着桌子坐下，和我拉起家常。</p></div></section>
+    <section class="beat" data-s="2" data-tone="dark"><div class="card"><p>聊着聊着，说起了草原上新近的一件事。</p></div></section>
+    <section class="beat" data-s="2" data-tone="dark"><div class="card"><p>“很久没见过那样的狼了。”阿妈褪下手上的佛珠，一颗一颗数着。</p></div></section>
+
+    <section class="beat" data-s="3"><div class="card"><p>前些日子，一匹大公狼钻进羊圈，叼走了一只羊。猎人在附近下了狼夹子。</p></div></section>
+    <section class="beat" data-s="3"><div class="card"><p>几天后，夹子找到了。上面只剩一只咬断的狼爪。</p></div></section>
+    <section class="beat" data-s="3"><div class="card"><p>狼咬断了自己的前爪，跑了。</p></div></section>
+
+    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>三只爪子爬不上山。藏狗循着血迹追上来，他躲进山脚乱石堆的石缝里，狼头朝外。</p></div></section>
+    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>第一只冲进去的狗，没能再出来。剩下的狗只敢守在外面叫。</p></div></section>
+    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>猎人把藏刀绑在马棒上，捅进了石缝。</p></div></section>
+    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>“刀伤全在头上，身上一点伤都没有。”牧民大哥说，“他到死都是迎着刀往上咬。”</p><p>只剩一只眼睛，还死盯着杀他的人。</p></div></section>
+
+    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>我咽了一口茶，下意识摸了摸喉咙，好像那一刀是捅进了我的喉管。</p></div></section>
+    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>阿妈一颗颗拨着佛珠：“最可怜的是后来那只母狼。刚生了狼崽没多久。”</p></div></section>
+    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>母狼带崽的时候守在洞里，打猎养家的是公狼。所以他才会去偷羊。</p></div></section>
+
+    <section class="beat" data-s="6"><div class="card"><p>“他去抓野牛野羊不行吗？”我问。</p></div></section>
+    <section class="beat" data-s="6"><div class="card"><p>大胡子牧民干笑了几声：“你一路走过来，看见有吗？”</p></div></section>
+    <section class="beat" data-s="6"><div class="card"><p>斑羚、麂子、青羊、狍子……这些早就被人打光了。</p><p>我突然憎恨起人来。</p></div></section>
+
+    <section class="beat" data-s="7" data-tone="dark"><div class="card"><p>公狼死后，母狼像疯了一样。大白天闯进牧场，接连咬死了三四只羊。</p></div></section>
+    <section class="beat" data-s="7" data-tone="dark"><div class="card"><p>到了晚上，她就跑到公狼被杀的地方，一声接一声地嚎。</p></div></section>
+    <section class="beat" data-s="7" data-tone="dark"><div class="card"><p>狗撵不走她，见了人也不躲。她是在跟人玩命。</p></div></section>
+
+    <section class="beat" data-s="8" data-tone="dark"><div class="card"><p>猎人们找到了狼窝。母狼不在，窝里还有小狼崽。</p></div></section>
+    <section class="beat" data-s="8" data-tone="dark"><div class="card"><p>牧民大哥嚼着糌粑，停了好一会儿，才接着说：后来，他们投了毒肉。</p></div></section>
+    <section class="beat" data-s="8" data-tone="dark"><div class="card"><p>中了毒的母狼，自己用牙把背上的皮撕烂了。死都没让人得到那张狼皮。</p></div></section>
+    <section class="beat" data-s="8" data-tone="dark"><div class="card"><p>阿妈手上的珠串，停住了。</p></div></section>
+
+    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>母狼临死前爬回狼窝，挨个舔她的孩子。</p></div></section>
+    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>她盯着围上来的人嗥叫，嗥得人心颤，一直嗥到咽气。</p></div></section>
+    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>“她不是被毒死的。”阿妈说，“公狼死了，她也不想活了。”</p></div></section>
+    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>六只狼崽，都还没睁眼。听说，被人掏走了。</p></div></section>
+
+    <section class="beat" data-s="10"><div class="card"><p>“你想见小狼崽？母狼都死了，你只能见到一窝死狼崽了。”</p></div></section>
+    <section class="beat" data-s="10"><div class="card"><p>可我耳边，好像已经响起了狼崽微弱的呼救声。我要知道它们最后的命运。</p></div></section>
+    <section class="beat" data-s="10"><div class="card"><p>阿妈把那串一直数着的佛珠放进我手心，双手握紧，念着我听不懂的话。</p></div></section>
+
+    <section class="beat" data-s="11"><div class="card"><p>我灌满一大壶水，顶着正午的太阳出发了。</p></div></section>
+    <section class="beat" data-s="11"><div class="card"><p>老阿妈倚在门口的身影，渐渐模糊。</p></div></section>
+    <section class="beat" data-s="11"><div class="card"><p>那时我还不知道，那窝狼崽里有一只，会影响我的一生。</p></div></section>
+  </div>
+</div>
+
+<section class="end" id="end">
+  <div class="end-inner">
+    <p class="eyebrow">第一部分 · 完</p>
+    <div class="reel" role="img" aria-label="片尾真实影像的预留位置">
+      <span>片尾 · 真实影像</span>
+      <small>完整版会在这里接入真实的照片或影像（需取得授权）</small>
+    </div>
+    <h2>关于这一部分</h2>
+    <ul>
+      <li>内容：第一章前段。在牧民家听到公狼断爪、母狼殉情的故事，决定去找那窝狼崽。共 11 个镜头。</li>
+      <li>旁白根据原著第一章压缩改写，部分对白沿用原文。公开发布前需要取得原著的改编授权。</li>
+      <li>画面全部由网页实时绘制，没有使用视频或图片文件。激烈情节（石缝、毒肉）只用关键画面和光线暗示，不直接表现。</li>
+      <li>风声、狗吠、狼嚎、狼崽的叫声和佛珠的轻响都是程序合成的占位音效，正式版应换成真实录音和旁白配音。</li>
+    </ul>
+    <p class="next">下一部分：《寻狼之路》</p>
+    <a class="again" href="#top">回到开头</a>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function el(tag, attrs, parent) { var e = document.createElementNS(NS, tag); for (var k in attrs) e.setAttribute(k, attrs[k]); if (parent) parent.appendChild(e); return e; }
+  function $(id) { return document.getElementById(id); }
+  function f(n) { return n.toFixed(1); }
+  function clamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
+  function bell(p, a, b) { return Math.sin(clamp((p - a) / (b - a)) * Math.PI); }
+
+  function grass(id, n, seed, o) {
+    var g = $(id), r = rng(seed), buckets = {};
+    for (var i = 0; i < n; i++) {
+      var x = o.x0 + r() * (o.x1 - o.x0), base = o.base(x, r), h = o.h(base, r), lean = (r() - .4) * h * .5;
+      var c = o.colors[Math.floor(r() * o.colors.length)];
+      buckets[c] = (buckets[c] || '') + 'M' + f(x) + ',' + f(base) + 'q' + f(lean * .3) + ',' + f(-h * .55) + ' ' + f(lean) + ',' + f(-h);
+    }
+    for (var c2 in buckets) el('path', { d: buckets[c2], stroke: c2, 'stroke-width': o.w, 'stroke-linecap': 'round', fill: 'none' }, g);
+  }
+  function ridge(id, fn) {
+    var d = 'M-40,920';
+    for (var x = -40; x <= 1640; x += 20) d += 'L' + x + ',' + f(fn(x));
+    $(id).setAttribute('d', d + 'L1640,920Z');
+  }
+
+  // ---------- reusable figures (each joint is a local origin) ----------
+  // me: a young woman walking, long braid with a purple ribbon, white blouse, dark-blue skirt,
+  // orange-red sash, white sneakers, drawing board on her back; feet at y=0, facing right
+  function walker() {
+    var leg = '<path d="M0,0 L0,20" stroke="#d9b08f" stroke-width="2.6" stroke-linecap="round"/><path d="M-1,20 h5.5" stroke="#efece6" stroke-width="3.2" stroke-linecap="round"/>';
+    return '<g class="bob">' +
+      '<g transform="translate(-1,-22)"><g class="legB">' + leg + '</g></g>' +
+      '<g transform="translate(1,-22)"><g class="legA">' + leg + '</g></g>' +
+      '<rect x="-14" y="-45" width="7" height="25" rx="1" fill="#8a6a45" transform="rotate(-10 -10 -32)"/>' +
+      '<path d="M-3,-37 L-10,-22" stroke="#5a4632" stroke-width="1.2"/>' +
+      '<g transform="translate(0,-24)"><path class="skirt" d="M-5,0 L5,0 Q9,10 10,20 L-9,20 Q-8,10 -5,0Z" fill="#2f3f66"/></g>' +
+      '<path d="M-5,-24 Q-6.8,-34 -4,-37.5 L4,-37.5 Q6.8,-34 5,-24Z" fill="#ece7dc"/>' +
+      '<path d="M-5.6,-27 h11.2 v3.4 h-11.2Z" fill="#c8552e"/>' +
+      '<g transform="translate(-5,-25.5)"><path class="flag" d="M0,0 L-6,2 L-5,8 L0,3Z" fill="#c8552e"/></g>' +
+      '<g transform="translate(-3,-41)"><g class="braid"><path d="M0,0 Q-3,10 -1,20 Q0,26 -2,31" stroke="#141110" stroke-width="2.8" fill="none" stroke-linecap="round"/><circle cx="-2" cy="32" r="1.5" fill="#8e6bb0"/></g></g>' +
+      '<g transform="translate(1,-35.5)"><g class="armA"><path d="M0,0 L1,12" stroke="#ece7dc" stroke-width="3.4" stroke-linecap="round"/><circle cx="1.2" cy="13.4" r="1.5" fill="#d9b08f"/></g></g>' +
+      '<rect x="-1.4" y="-39.5" width="3" height="3" fill="#d9b08f"/>' +
+      '<ellipse cx="1.2" cy="-43" rx="4" ry="4.9" fill="#d9b08f"/>' +
+      '<path d="M-4,-41 Q-5.4,-49 1,-48.6 Q5.6,-48 5.2,-45 Q1.5,-46.4 -.6,-43 Q-1.6,-40 -4,-41Z" fill="#141110"/>' +
+      '</g>';
+  }
+  // yak, facing left, feet at y=0
+  function yak(x, y, s, flip, d) {
+    return '<g transform="translate(' + x + ',' + y + ') scale(' + (s * flip) + ',' + s + ')">' +
+      '<path d="M-24,-30 Q-20,-44 0,-44 Q22,-46 30,-34 Q36,-22 30,-12 L-22,-12 Q-30,-18 -24,-30Z" fill="#3b322b"/>' +
+      '<path d="M-24,-16 Q0,-6 32,-14 L30,-7 Q0,1 -22,-8Z" fill="#2e2722"/>' +
+      '<path d="M-16,-12 v12 M-8,-12 v12 M18,-12 v12 M26,-12 v12" stroke="#2e2722" stroke-width="4" stroke-linecap="round"/>' +
+      '<g transform="translate(31,-32)"><path class="swish" style="animation-delay:-' + d + 's" d="M0,0 Q6,10 4,22" stroke="#2e2722" stroke-width="3.4" fill="none" stroke-linecap="round"/></g>' +
+      '<g transform="translate(-22,-32)"><g class="graze" style="animation-delay:-' + d + 's">' +
+      '<path d="M0,0 Q-10,2 -14,10 Q-16,16 -10,18 Q-2,16 2,8Z" fill="#2e2722"/>' +
+      '<path d="M-8,2 Q-15,-6 -9,-11 M-3,0 Q3,-8 -1,-12" stroke="#d8cdb8" stroke-width="2" fill="none" stroke-linecap="round"/></g></g></g>';
+  }
+  function sheep(x, y, s, flip, d) {
+    return '<g transform="translate(' + x + ',' + y + ') scale(' + (s * flip) + ',' + s + ')">' +
+      '<path d="M-6,-6 v6 M6,-6 v6" stroke="#4a4038" stroke-width="2.4" stroke-linecap="round"/>' +
+      '<ellipse cx="0" cy="-10" rx="11" ry="7" fill="#ece6d6"/>' +
+      '<g transform="translate(-9,-12)"><g class="graze" style="animation-delay:-' + d + 's;animation-duration:7s"><ellipse cx="-4" cy="2" rx="4" ry="3" fill="#3a332c"/></g></g></g>';
+  }
+  // Tibetan dog, facing right toward the crevice, feet at y=0
+  function dog(x, y, s, d) {
+    return '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')"><g class="lean" style="animation-delay:-' + d + 's">' +
+      '<path d="M-40,-40 Q-10,-52 26,-46 Q40,-40 36,-26 L-36,-24 Q-48,-30 -40,-40Z" fill="#141316"/>' +
+      '<path d="M-30,-26 L-34,0 M-18,-26 L-16,0 M20,-28 L22,0 M30,-28 L34,0" stroke="#141316" stroke-width="7" stroke-linecap="round"/>' +
+      '<g transform="translate(-40,-38)"><path class="wag" d="M0,0 Q-16,-10 -12,-28" stroke="#141316" stroke-width="7" fill="none" stroke-linecap="round"/></g>' +
+      '<g transform="translate(28,-44)"><g class="bark" style="animation-delay:-' + d + 's">' +
+      '<path d="M0,0 Q6,-14 18,-14 L32,-8 Q34,-3 30,-1 L12,0 Q6,6 0,6Z" fill="#141316"/><path d="M8,-12 L10,-24 L16,-13Z" fill="#141316"/>' +
+      '<g transform="translate(14,0)"><path class="jaw" style="animation-delay:-' + d + 's" d="M0,0 L16,0 Q14,5 0,5Z" fill="#141316"/></g>' +
+      '</g></g></g></g>';
+  }
+  // cub, curled, eyes not yet open; head toward -x
+  function cub(x, y, rot, col, d, wr) {
+    return '<g transform="translate(' + x + ',' + y + ') rotate(' + rot + ')"><g class="' + (wr ? 'wriggle' : '') + '"><g class="fbreath" style="animation-duration:' + (1.6 + d * .3).toFixed(2) + 's;animation-delay:-' + d + 's">' +
+      '<ellipse rx="30" ry="18" fill="' + col + '" filter="url(#fur)"/><ellipse cx="6" cy="-6" rx="18" ry="8" fill="#4e443b" opacity=".5"/>' +
+      '<ellipse cx="-24" cy="-2" rx="15" ry="13" fill="' + col + '" filter="url(#fur)"/>' +
+      '<path d="M-18,-14 l3,-6 l4,6Z" fill="#4e443b"/><path d="M-32,-4 q4,2 8,0" stroke="#231d18" stroke-width="1.6" fill="none"/>' +
+      '<circle cx="-38" cy="0" r="2.6" fill="#1d1916"/></g></g></g>';
+  }
+  function flags(id, x0, y0, x1, y1, n, sag) {
+    var g = $(id), cols = ['#5b7fa6', '#ece6d6', '#b4544a', '#6c8f5a', '#d8b34a'], h = '';
+    for (var i = 0; i < n; i++) {
+      var t = (i + .5) / n, x = x0 + (x1 - x0) * t, y = y0 + (y1 - y0) * t + Math.sin(t * Math.PI) * sag;
+      h += '<g transform="translate(' + f(x) + ',' + f(y) + ')"><path class="flag" style="animation-delay:-' + (i * .23).toFixed(2) + 's" d="M0,0 L' + f((x1 - x0) / n * .8) + ',0 L' + f((x1 - x0) / n * .7) + ',' + f(Math.abs(x1 - x0) / n * .9) + ' L0,' + f(Math.abs(x1 - x0) / n * .9) + 'Z" fill="' + cols[i % 5] + '" opacity=".85"/></g>';
+    }
+    g.innerHTML = h;
+  }
+
+  // ---------- scene 1 ----------
+  var hill1 = function (x) { return 772 - 30 * Math.sin(x / 420 + .6) - 10 * Math.sin(x / 140 + 2); };
+  ridge('p1fg', hill1);
+  grass('g1mid', 260, 3, { x0: -20, x1: 1620, w: 1.3, colors: ['#b8a46c', '#a39a62', '#c9b580', '#9aa06a'], base: function (x, r) { return 576 + r() * 180; }, h: function (b, r) { return 3 + (b - 570) / 190 * 7 + r() * 3; } });
+  grass('g1fg', 520, 7, { x0: -30, x1: 1630, w: 2.4, colors: ['#8a7a45', '#6f6a3c', '#b29c62', '#7c8250', '#c4ad70'], base: function (x, r) { return hill1(x) + 4 + r() * 150; }, h: function (b, r) { return 12 + (b - 720) / 180 * 30 + r() * 14; } });
+  $('g1herd').innerHTML = yak(300, 626, 1.1, 1, 0) + yak(372, 640, 1.2, -1, 3.1) + yak(452, 618, .95, 1, 5.4) + yak(220, 660, 1.3, 1, 7) +
+    sheep(1180, 604, 1, 1, 1) + sheep(1214, 610, 1, -1, 3) + sheep(1250, 602, .9, 1, 5) + sheep(1290, 612, 1, 1, 2) + sheep(1330, 606, .9, -1, 4.4) + sheep(1236, 622, 1.05, 1, 6);
+  flags('g1flags', 34, -22, 102, -32, 7, 6);
+  $('w1').innerHTML = walker();
+
+  // ---------- scene 2 ----------
+  (function () {
+    var g = $('g2motes'), r = rng(51);
+    for (var i = 0; i < 22; i++) {
+      var c = el('circle', { cx: f(640 + r() * 360), cy: f(80 + r() * 600), r: f(1.2 + r() * 1.8), fill: '#f4ddb0', opacity: f(.25 + r() * .4), 'class': 'mote' }, g);
+      c.style.animationDuration = f(8 + r() * 8) + 's'; c.style.animationDelay = '-' + f(r() * 10) + 's';
+    }
+  })();
+
+  // ---------- scene 3: sketchbook rings ----------
+  (function () {
+    var g = $('g3rings');
+    for (var y = 84; y < 850; y += 52) { el('circle', { cx: 100, cy: y, r: 11, fill: 'none', stroke: '#9a968e', 'stroke-width': 3 }, g); el('circle', { cx: 112, cy: y, r: 3, fill: '#4a423a' }, g); }
+  })();
+
+  // ---------- scene 4 ----------
+  (function () {
+    var g = $('g4stars'), r = rng(61);
+    for (var i = 0; i < 70; i++) { var c = el('circle', { cx: f(r() * 1600), cy: f(r() * 330), r: f(.6 + r() * 1.4), fill: '#dfe4ee', opacity: f(.3 + r() * .5), 'class': 'twinkle' }, g); c.style.animationDelay = '-' + f(r() * 4) + 's'; }
+    $('g4dogs').innerHTML = dog(470, 724, 1.25, 0) + dog(600, 712, 1.05, 1.1) + dog(380, 736, 1.4, 1.7);
+    var fg = $('g4fg'), q = rng(67);
+    for (var k = 0; k < 40; k++) {
+      var bx = k < 20 ? q() * 360 : 1260 + q() * 360, h = 140 + q() * 240, ln = (q() - .5) * 140;
+      el('path', { d: 'M' + f(bx) + ',940q' + f(ln * .3) + ',' + f(-h * .55) + ' ' + f(ln) + ',' + f(-h), stroke: ['#121317', '#1b1c22', '#23242b'][k % 3], 'stroke-width': f(10 + q() * 16), 'stroke-linecap': 'round', fill: 'none' }, fg);
+    }
+  })();
+
+  // ---------- scene 6: fence, sheep, rodent mounds ----------
+  (function () {
+    var hill = function (x) { return 790 - 24 * Math.sin(x / 380 + 1.2); };
+    ridge('p6fg', hill);
+    grass('g6fg', 440, 71, { x0: -30, x1: 1630, w: 2.4, colors: ['#9c8752', '#857a47', '#b8a46a', '#a59a60'], base: function (x, r) { return hill(x) + 4 + r() * 140; }, h: function (b, r) { return 10 + r() * 24; } });
+    var m = $('g6mounds'), r = rng(73);
+    for (var i = 0; i < 46; i++) {
+      var x = r() * 1600, y = 580 + r() * 230, s = .5 + (y - 580) / 230 * 1.4;
+      el('ellipse', { cx: f(x), cy: f(y), rx: f(16 * s), ry: f(6 * s), fill: ['#a88a62', '#9a7c55', '#b39670'][i % 3], filter: 'url(#wc)' }, m);
+    }
+    var fence = $('g6fence'), d = '';
+    for (var j = 0; j < 16; j++) {
+      var t = j / 15, k = Math.pow(t, 1.6), px = 120 + k * 1260, py = 850 - k * 270, ph = 110 * (1 - k * .82);
+      el('rect', { x: f(px - 3 * (1 - k * .7)), y: f(py - ph), width: f(6 * (1 - k * .7)), height: f(ph), fill: '#6a5a44' }, fence);
+      d += (j ? 'L' : 'M') + f(px) + ',' + f(py - ph * .85);
+    }
+    el('path', { d: d, stroke: '#5a4e40', 'stroke-width': 1.4, fill: 'none' }, fence);
+    el('path', { d: d.replace(/,(\d+\.\d)/g, function (s, y) { return ',' + f(+y + 30); }), stroke: '#5a4e40', 'stroke-width': 1.2, fill: 'none', opacity: .8 }, fence);
+    var sh = '', q = rng(79);
+    for (var n = 0; n < 26; n++) sh += sheep(f(900 + q() * 460), f(600 + q() * 40), (.8 + q() * .3).toFixed(2), q() > .5 ? 1 : -1, (q() * 7).toFixed(1));
+    $('g6sheep').innerHTML = sh;
+  })();
+
+  // ---------- scene 7 ----------
+  (function () {
+    var g = $('g7stars'), r = rng(83);
+    for (var i = 0; i < 110; i++) { var c = el('circle', { cx: f(r() * 1600), cy: f(r() * 520), r: f(.6 + r() * 1.5), fill: '#e5e9f2', opacity: f(.3 + r() * .55), 'class': 'twinkle' }, g); c.style.animationDelay = '-' + f(r() * 4) + 's'; c.style.animationDuration = f(3 + r() * 3) + 's'; }
+    var fg = $('g7fg'), q = rng(89);
+    for (var k = 0; k < 36; k++) {
+      var bx = k < 18 ? q() * 380 : 1240 + q() * 380, h = 120 + q() * 240, ln = (q() - .5) * 140;
+      el('path', { d: 'M' + f(bx) + ',940q' + f(ln * .3) + ',' + f(-h * .55) + ' ' + f(ln) + ',' + f(-h), stroke: ['#0b0d13', '#11131b'][k % 2], 'stroke-width': f(10 + q() * 14), 'stroke-linecap': 'round', fill: 'none' }, fg);
+    }
+  })();
+
+  // ---------- scene 8: embers ----------
+  (function () {
+    var g = $('g8embers'), r = rng(97);
+    for (var i = 0; i < 18; i++) { var c = el('circle', { cx: f(760 + r() * 80), cy: f(800 + r() * 40), r: f(1.2 + r() * 1.8), fill: '#f8c46a', 'class': 'ember' }, g); c.style.animationDuration = f(4 + r() * 4) + 's'; c.style.animationDelay = '-' + f(r() * 8) + 's'; }
+  })();
+
+  // ---------- scene 9: six cubs, motes ----------
+  $('g9cubs').innerHTML =
+    cub(640, 690, -8, '#6e6255', .2, false) + cub(700, 712, 6, '#76695c', .9, true) + cub(760, 690, -4, '#6a5e52', 1.4, false) +
+    cub(620, 724, 10, '#7a6c5e', .5, false) + cub(690, 742, -6, '#716558', 1.8, true) + cub(770, 732, 4, '#675b4f', 1.1, false);
+  (function () {
+    var g = $('g9motes'), r = rng(31);
+    for (var i = 0; i < 24; i++) { var c = el('circle', { cx: f(700 + r() * 700), cy: f(240 + r() * 420), r: f(1.2 + r() * 2), fill: '#ead6ad', opacity: f(.3 + r() * .4), 'class': 'mote' }, g); c.style.animationDuration = f(7 + r() * 8) + 's'; c.style.animationDelay = '-' + f(r() * 10) + 's'; }
+  })();
+
+  // ---------- scene 11 ----------
+  (function () {
+    var hill = function (x) { return 800 - 20 * Math.sin(x / 400 + .3); };
+    ridge('p11fg', hill);
+    grass('g11mid', 240, 101, { x0: -20, x1: 1620, w: 1.4, colors: ['#b8a46c', '#a39a62', '#c9b580'], base: function (x, r) { return 580 + r() * 200; }, h: function (b, r) { return 4 + (b - 570) / 200 * 8 + r() * 3; } });
+    grass('g11fg', 460, 103, { x0: -30, x1: 1630, w: 2.4, colors: ['#8a7a45', '#b29c62', '#7c8250', '#c4ad70'], base: function (x, r) { return hill(x) + 4 + r() * 130; }, h: function (b, r) { return 12 + r() * 26; } });
+    flags('g11flags', 790, 546, 930, 560, 9, 12);
+    $('w11').innerHTML = walker();
+  })();
+
+  // ---------- scroll direction ----------
+  var scenes = [].slice.call(document.querySelectorAll('.scene'));
+  var beats = [].slice.call(document.querySelectorAll('.beat'));
+  var lines = beats.filter(function (b) { return !b.classList.contains('title-beat'); }), linePos = [], curLine = -2, swapT;
+  var narr = document.querySelector('.narr'), ncard = narr.querySelector('.card'), ntxt = narr.querySelector('.txt'), ncount = narr.querySelector('.count');
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  // swap the words in the fixed card: fade out, change, fade in
+  function showLine(i) {
+    curLine = i;
+    if (i < 0) { narr.classList.add('hide'); return; }
+    var b = lines[i], first = narr.classList.contains('hide');
+    narr.classList.remove('hide');
+    var apply = function () {
+      ntxt.innerHTML = b.querySelector('.card').innerHTML;
+      ncard.classList.toggle('dark', b.dataset.tone === 'dark');
+      ncount.textContent = pad(i + 1) + ' / ' + pad(lines.length);
+      ntxt.classList.remove('out');
+    };
+    clearTimeout(swapT);
+    if (reduce || first) { apply(); return; }
+    ntxt.classList.add('out'); swapT = setTimeout(apply, 280);
+  }
+  var layers = scenes.map(function (s) { return [].slice.call(s.querySelectorAll('.layer')); });
+  var N = scenes.length;
+  var labels = { 1: '镜头 01 · 大全景 · 正午', 2: '镜头 02 · 中景 · 牧民帐篷', 3: '镜头 03 · 速写本 · 讲述', 4: '镜头 04 · 夜 · 石缝 · 讲述', 5: '镜头 05 · 特写 · 茶碗与佛珠', 6: '镜头 06 · 大全景 · 空草场', 7: '镜头 07 · 长焦 · 月夜山头', 8: '镜头 08 · 近景 · 炉火', 9: '镜头 09 · 贴地 · 狼窝', 10: '镜头 10 · 特写 · 手心', 11: '镜头 11 · 远景 · 午后' };
+  var shot = $('shotLabel');
+  var pens = [].slice.call(document.querySelectorAll('#pen3 .pen'));
+  var lens = pens.map(function (p) { var l = 400; try { l = p.getTotalLength(); } catch (e) {} p.style.strokeDasharray = l; p.style.strokeDashoffset = l; return l; });
+  var sketch = $('sketch'), ranges = {}, current = 0, ticking = false;
+
+  // per-shot, scroll-driven acting
+  var act = {
+    1: function (p) { $('w1').setAttribute('transform', 'translate(' + f(560 + p * 360) + ',' + f(614 - p * 26) + ') scale(' + f(1.8 - p * .5) + ')'); },
+    2: function (p) { $('bowlArm').setAttribute('transform', 'rotate(' + f(bell(p, .3, .75) * 42) + ')'); },
+    3: function (p) {
+      var dk = clamp(p / .4), n = pens.length;
+      pens.forEach(function (pth, i) { var a = i / n * .7, k = clamp((dk - a) / .3); pth.style.strokeDashoffset = lens[i] * (1 - k); });
+      $('wash3').setAttribute('opacity', f(clamp((p - .3) / .25)));
+      $('nTrap').setAttribute('opacity', p > .2 ? 1 : 0);
+      $('nPaw').setAttribute('opacity', p > .45 ? 1 : 0);
+      $('nBit').setAttribute('opacity', p > .74 ? 1 : 0);
+    },
+    4: function (p) {
+      $('men4').setAttribute('opacity', p > .5 ? 1 : 0);
+      $('pole4').setAttribute('transform', 'translate(' + f(-clamp((p - .55) / .15) * 60) + ',0)');
+      $('blade4').setAttribute('opacity', f(.5 + bell(p, .62, .74) * .5));
+      var dk = clamp((p - .76) / .14);
+      $('dark4').setAttribute('opacity', f(dk * .9));
+      $('eye4').setAttribute('opacity', f(dk));
+    },
+    5: function (p) { $('bowl5').setAttribute('transform', 'translate(0,' + f(-bell(p, 0, .3) * 46) + ')'); },
+    8: function (p) {
+      $('beads8').classList.toggle('stopped', p > .76);
+      $('fire8').setAttribute('transform', 'translate(800,878) scale(' + f(1 - clamp((p - .5) / .4) * .3) + ')');
+    },
+    9: function (p) {
+      var den = $('den9');
+      den.classList.toggle('licking-off', p > .3);
+      den.classList.toggle('slow', p > .3 && p <= .5);
+      den.classList.toggle('still', p > .5);
+      $('eye9').setAttribute('transform', 'translate(-28,-18) scale(1,' + (p > .5 ? .1 : 1) + ')');
+    },
+    10: function (p) {
+      var k = clamp(p / .35);
+      $('herHands').setAttribute('transform', 'translate(' + f((1 - k) * 260 - k * 150) + ',' + f((1 - k) * -180 + k * 200) + ')');
+      var drop = clamp((p - .36) / .1);
+      $('beadsHers').setAttribute('opacity', f(1 - drop));
+      $('beadsMine').setAttribute('opacity', f(drop));
+      var clasp = clamp((p - .62) / .12);
+      $('herHands').setAttribute('opacity', f(1 - clasp));
+      $('herClasp').setAttribute('opacity', f(clasp));
+    },
+    11: function (p) {
+      $('w11').setAttribute('transform', 'translate(' + f(800 + p * 440) + ',' + f(700 - p * 134) + ') scale(' + f(2.3 - p * 1.65) + ')');
+      var b = clamp((p - .2) / .5);
+      $('amaSharp').setAttribute('opacity', f(1 - b));
+      $('amaBlur').setAttribute('opacity', f(b));
+    }
+  };
+
+  // Portrait phones see about a quarter of the 16:9 drawing. Instead of cropping the middle,
+  // each layer is laid out at the drawing's full width and positioned so the shot's subject
+  // (data-fx, in drawing units) sits in the centre; "a,b" pans from a to b as the shot plays.
+  var portraitMode = false, layerW = 0, fxs = scenes.map(function (sc) {
+    var v = (sc.dataset.fx || '800').split(',').map(Number); return [v[0], v.length > 1 ? v[1] : v[0]];
+  });
+  function frame(portrait) {
+    portraitMode = portrait;
+    var H = scenes[0].clientHeight || innerHeight;
+    layerW = H * 16 / 9;
+    scenes.forEach(function (sc, i) {
+      if (sc.dataset.n === '3') return;
+      layers[i].forEach(function (l) {
+        if (portrait) { l.style.left = f(innerWidth / 2 - fxs[i][0] / 1600 * layerW) + 'px'; l.style.width = f(layerW) + 'px'; l.style.right = 'auto'; }
+        else { l.style.left = l.style.width = l.style.right = ''; }
+      });
+    });
+  }
+  function measure() {
+    var y = window.scrollY; ranges = {};
+    beats.forEach(function (b) {
+      var r = b.getBoundingClientRect(), s = b.dataset.s, top = r.top + y, bot = r.bottom + y;
+      if (!ranges[s]) ranges[s] = { start: top, end: bot }; else ranges[s].end = bot;
+    });
+    linePos = lines.map(function (b) { var r = b.getBoundingClientRect(); return [r.top + y, r.bottom + y]; });
+    var portrait = innerWidth / innerHeight < 1;
+    frame(portrait);
+    sketch.setAttribute('preserveAspectRatio', portrait ? 'xMidYMid meet' : 'xMidYMid slice');
+    sketch.setAttribute('viewBox', portrait ? '450 90 1010 800' : '0 0 1600 900');
+  }
+  function update() {
+    ticking = false;
+    var mid = window.scrollY + innerHeight * .5, active = 1;
+    for (var s = 1; s <= N; s++) if (ranges[s] && ranges[s].start <= mid) active = s;
+    var R = ranges[active], p = clamp((mid - R.start) / (R.end - R.start));
+    if (active !== current) {
+      scenes.forEach(function (sc, i) { sc.classList.toggle('on', i === active - 1); });
+      shot.textContent = labels[active];
+      current = active; sound.scene(active);
+    }
+    var sc = scenes[active - 1], fxa = fxs[active - 1];
+    var pan = portraitMode && sc.dataset.n !== '3' ? -(fxa[1] - fxa[0]) * (reduce ? .5 : p) / 1600 * layerW : 0;
+    if (!reduce) {
+      // no push-in zoom on phones: rescaling the wide layers every frame is costly there
+      var z = portraitMode ? 0 : parseFloat(sc.dataset.zoom || 0);
+      sc.style.transform = z ? 'scale(' + (1 + p * z) + ')' : '';
+      var amp = portraitMode ? 40 : 70;
+      layers[active - 1].forEach(function (l) { var d = parseFloat(l.dataset.depth || 0); l.style.transform = 'translate3d(' + f(-(p - .5) * d * amp + pan) + 'px,0,0)'; });
+    } else if (portraitMode) {
+      layers[active - 1].forEach(function (l) { l.style.transform = 'translate3d(' + f(pan) + 'px,0,0)'; });
+    }
+    if (act[active]) act[active](p);
+    var li = -1;
+    for (var k = 0; k < linePos.length; k++) if (linePos[k][0] <= mid && mid < linePos[k][1]) li = k;
+    if (li !== curLine) showLine(li);
+  }
+  function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
+
+  // ---------- placeholder sound (synthesised) ----------
+  var sound = (function () {
+    var ctx, master, windGain, lp, rev, noiseBuf, on = false, played = {}, cur = 1, timer;
+    // [wind level, wind low-pass]: open grassland is loud and bright, inside the tent and the den it is muffled
+    var mix = { 1: [.2, 2400], 2: [.05, 500], 3: [.03, 800], 4: [.12, 1100], 5: [.04, 480], 6: [.22, 2600], 7: [.16, 1200], 8: [.04, 450], 9: [.04, 420], 10: [.06, 700], 11: [.2, 2200] };
+    function build() {
+      var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
+      ctx = new AC();
+      master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+      var len = ctx.sampleRate * 3, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0), last = 0;
+      for (var i = 0; i < len; i++) { var w = Math.random() * 2 - 1; last = (last + .02 * w) / 1.02; d[i] = last * 3.5 + w * .15; }
+      noiseBuf = ctx.createBuffer(1, ctx.sampleRate * .3, ctx.sampleRate);
+      var nd = noiseBuf.getChannelData(0); for (var n = 0; n < nd.length; n++) nd[n] = Math.random() * 2 - 1;
+      var src = ctx.createBufferSource(); src.buffer = buf; src.loop = true;
+      var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 420; bp.Q.value = .7;
+      lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
+      windGain = ctx.createGain(); windGain.gain.value = .2;
+      src.connect(bp); bp.connect(lp); lp.connect(windGain); windGain.connect(master); src.start();
+      var lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = .07; lg.gain.value = 220; lfo.connect(lg); lg.connect(bp.frequency); lfo.start();
+      var gust = ctx.createOscillator(), gg = ctx.createGain(); gust.frequency.value = .11; gg.gain.value = .05; gust.connect(gg); gg.connect(windGain.gain); gust.start();
+      rev = ctx.createConvolver();
+      var il = ctx.sampleRate * 2.8, ib = ctx.createBuffer(2, il, ctx.sampleRate);
+      for (var c = 0; c < 2; c++) { var ch = ib.getChannelData(c); for (var j = 0; j < il; j++) ch[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / il, 3); }
+      rev.buffer = ib; var rg = ctx.createGain(); rg.gain.value = .55; rev.connect(rg); rg.connect(master);
+      timer = setInterval(tick, 600);
+      return true;
+    }
+    function burst(freq, q, gain, dur, wet) {
+      var s = ctx.createBufferSource(), b = ctx.createBiquadFilter(), g = ctx.createGain(), t = ctx.currentTime;
+      s.buffer = noiseBuf; b.type = 'bandpass'; b.frequency.value = freq; b.Q.value = q;
+      g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+      s.connect(b); b.connect(g); g.connect(master); if (wet) g.connect(rev); s.start(t); s.stop(t + dur + .05);
+    }
+    // bead clicks while amala counts; fire crackle in the tent
+    function tick() {
+      if (!on) return;
+      if ((cur === 2 || cur === 5) && Math.random() < .5) burst(3200, 6, .05, .04, false);
+      if ((cur === 2 || cur === 8) && Math.random() < .35) burst(1800 + Math.random() * 1500, 1.5, .03, .03, false);
+    }
+    function barks() {
+      var t0 = ctx.currentTime + .5;
+      [0, .34, 1.1, 1.42, 2.3].forEach(function (k, i) {
+        var o = ctx.createOscillator(), fl = ctx.createBiquadFilter(), g = ctx.createGain(), s = t0 + k;
+        o.type = 'sawtooth'; o.frequency.setValueAtTime(420 - i * 15, s); o.frequency.exponentialRampToValueAtTime(200, s + .14);
+        fl.type = 'lowpass'; fl.frequency.value = 900;
+        g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(.035, s + .015); g.gain.exponentialRampToValueAtTime(.0001, s + .18);
+        o.connect(fl); fl.connect(g); g.connect(master); g.connect(rev); o.start(s); o.stop(s + .2);
+      });
+    }
+    function howl(delay, base, level) {
+      var t = ctx.currentTime + delay, o = ctx.createOscillator(), v = ctx.createOscillator(), vg = ctx.createGain(), fl = ctx.createBiquadFilter(), g = ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(base, t); o.frequency.linearRampToValueAtTime(base * 1.7, t + 1.2); o.frequency.linearRampToValueAtTime(base * 1.62, t + 3.2); o.frequency.linearRampToValueAtTime(base * 1.2, t + 4.4);
+      v.frequency.value = 5.2; vg.gain.value = 7; v.connect(vg); vg.connect(o.frequency);
+      fl.type = 'lowpass'; fl.frequency.value = 1400;
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(level, t + .8); g.gain.linearRampToValueAtTime(level * .9, t + 3.2); g.gain.linearRampToValueAtTime(0, t + 4.5);
+      o.connect(fl); fl.connect(g); g.connect(master); g.connect(rev);
+      o.start(t); v.start(t); o.stop(t + 4.7); v.stop(t + 4.7);
+    }
+    function whimper() {
+      var t = ctx.currentTime + .8;
+      [0, .5, 1.3, 1.75].forEach(function (k, i) {
+        var o = ctx.createOscillator(), g = ctx.createGain(), s = t + k, hi = 1500 - i * 70;
+        o.type = 'sine'; o.frequency.setValueAtTime(1050, s); o.frequency.linearRampToValueAtTime(hi, s + .1); o.frequency.linearRampToValueAtTime(1150, s + .34);
+        g.gain.setValueAtTime(0, s); g.gain.linearRampToValueAtTime(.022, s + .05); g.gain.linearRampToValueAtTime(0, s + .36);
+        o.connect(g); g.connect(master); g.connect(rev); o.start(s); o.stop(s + .4);
+      });
+    }
+    function apply() {
+      if (!ctx || !on) return;
+      var t = ctx.currentTime;
+      windGain.gain.setTargetAtTime(mix[cur][0], t, 1.2); lp.frequency.setTargetAtTime(mix[cur][1], t, 1);
+      if (cur === 4 && !played.b) { played.b = 1; barks(); }
+      if (cur === 7 && !played.h) { played.h = 1; howl(1, 300, .06); howl(6.5, 290, .055); }
+      if (cur === 9 && !played.w) { played.w = 1; whimper(); }
+    }
+    return {
+      toggle: function () {
+        if (!ctx && !build()) return false;
+        on = !on;
+        if (on) { if (ctx.resume) ctx.resume(); master.gain.setTargetAtTime(.9, ctx.currentTime, .6); apply(); }
+        else master.gain.setTargetAtTime(0, ctx.currentTime, .3);
+        return on;
+      },
+      scene: function (n) { cur = n; apply(); }
+    };
+  })();
+
+  var btns = [].slice.call(document.querySelectorAll('[data-sound]'));
+  btns.forEach(function (b) {
+    b.addEventListener('click', function () {
+      var on = sound.toggle();
+      btns.forEach(function (x) {
+        x.setAttribute('aria-pressed', on ? 'true' : 'false');
+        if (x.classList.contains('snd')) x.querySelector('span').textContent = on ? '声音：开' : '声音：关';
+        else x.textContent = on ? '关闭声音' : '开启声音 · 建议戴耳机';
+      });
+    });
+  });
+
+  scenes.forEach(function (sc) { sc.setAttribute('aria-hidden', 'true'); });
+
+  // ---------- reading mode: scroll, or click to step one line at a time ----------
+  // Click mode locks manual scrolling and glides the page to each line, so the
+  // scroll-driven acting and the scene changes play exactly as they do when scrolling.
+  var mode = 'scroll', idx = -1, glideId = 0, endEl = $('end'), hint = $('hint');
+  var modeBtns = [].slice.call(document.querySelectorAll('[data-mode]'));
+  var navBtns = [].slice.call(document.querySelectorAll('[data-step]'));
+  function targetY(i) {
+    if (i < 0) return 0;
+    if (i >= lines.length) return endEl.getBoundingClientRect().top + window.scrollY;
+    return (linePos[i][0] + linePos[i][1]) / 2 - innerHeight / 2;
+  }
+  var glideSafety;
+  function glide(y, instant) {
+    cancelAnimationFrame(glideId); clearTimeout(glideSafety);
+    var y0 = window.scrollY, d = y - y0;
+    if (reduce || instant || Math.abs(d) < 2) { window.scrollTo(0, y); update(); return; }
+    var t0 = performance.now(), D = Math.min(1300, 600 + Math.abs(d) * .5);
+    // if frames stall (hidden tab, throttled renderer), land on the target anyway
+    glideSafety = setTimeout(function () { cancelAnimationFrame(glideId); window.scrollTo(0, y); update(); }, D + 250);
+    (function frame() {
+      var k = Math.min(1, Math.max(0, (performance.now() - t0) / D)), e = k < .5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+      window.scrollTo(0, y0 + d * e); update();
+      if (k < 1) glideId = requestAnimationFrame(frame);
+    })();
+  }
+  function stepTo(i, instant) {
+    idx = Math.max(-1, Math.min(lines.length, i));
+    navBtns[0].disabled = idx <= 0;
+    glide(targetY(idx), instant);
+  }
+  function currentIndex() {
+    if (curLine >= 0) return curLine;
+    return linePos.length && window.scrollY + innerHeight * .5 < linePos[0][0] ? -1 : lines.length;
+  }
+  function setMode(m, quiet) {
+    mode = m;
+    document.documentElement.classList.toggle('click-mode', m === 'click');
+    modeBtns.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false'); });
+    hint.textContent = m === 'click' ? '点击画面继续 · 方向键也可以' : '向下滑动';
+    if (!quiet) { try { localStorage.setItem('cflq-reading-mode', m); } catch (e) {} }
+    if (m === 'click') { measure(); stepTo(currentIndex(), true); }
+  }
+  modeBtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); setMode(b.dataset.mode); }); });
+  navBtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); stepTo(idx + Number(b.dataset.step)); }); });
+  document.addEventListener('click', function (e) {
+    if (mode !== 'click' || e.target.closest('button, a, .end')) return;
+    if (idx < lines.length) stepTo(idx + 1);
+  });
+  document.addEventListener('touchmove', function (e) { if (mode === 'click') e.preventDefault(); }, { passive: false });
+  document.addEventListener('keydown', function (e) {
+    if (mode !== 'click' || e.altKey || e.ctrlKey || e.metaKey) return;
+    if (e.target.closest && e.target.closest('button, a') && (e.key === ' ' || e.key === 'Enter')) return;
+    if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].indexOf(e.key) >= 0) { e.preventDefault(); stepTo(idx + 1); }
+    else if (['ArrowLeft', 'ArrowUp', 'PageUp'].indexOf(e.key) >= 0) { e.preventDefault(); stepTo(idx - 1); }
+  });
+  document.querySelector('.again').addEventListener('click', function (e) { if (mode === 'click') { e.preventDefault(); stepTo(-1); } });
+
+  measure(); update();
+  try { if (localStorage.getItem('cflq-reading-mode') === 'click') setMode('click', true); } catch (e) {}
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', function () { measure(); if (mode === 'click') stepTo(idx, true); onScroll(); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measure(); onScroll(); });
+})();
+</script>
