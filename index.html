@@ -51,6 +51,9 @@ body { background: var(--paper); color: var(--ink); font-family: var(--f-serif);
 .scene.on .layer { will-change: transform; }
 .stage { -webkit-tap-highlight-color: transparent; }
 .layer svg { display: block; width: 100%; height: 100%; }
+/* phones: each layer = a pre-rendered bitmap of its still parts + the original SVG holding only what moves */
+.lite .layer > svg, .lite .layer > canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.lite .modes, .lite .pick-mode { display: none; }
 .hand { font-family: var(--f-hand); }
 .grain {
   position: absolute; inset: 0; pointer-events: none; opacity: .5; mix-blend-mode: multiply;
@@ -998,7 +1001,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
       <div class="title-block">
         <p class="eyebrow">重返狼群 · 第一章 · 第一部分</p>
         <h1>草原传闻</h1>
-        <p class="lede">根据李微漪《重返狼群》第一章改编。往下滑动，或者切换到点击模式，故事会慢慢展开。</p>
+        <p class="lede" id="lede">根据李微漪《重返狼群》第一章改编。往下滑动，或者切换到点击模式，故事会慢慢展开。</p>
         <div class="pick">
           <button class="snd-big" type="button" data-sound aria-pressed="false">开启声音 · 建议戴耳机</button>
           <span class="pick-mode"><span class="pick-label">阅读方式</span>
@@ -1366,14 +1369,11 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
       var a = fxs[i][0], b = fxs[i][1];
       var lo = Math.max(-40, Math.min(a, b) - vis / 2 - margin), hi = Math.min(1640, Math.max(a, b) + vis / 2 + margin);
       layers[i].forEach(function (l) {
-        var svg = l.querySelector('svg');
-        if (portrait) {
-          l.style.left = f(innerWidth / 2 - (a - lo) * k) + 'px'; l.style.width = f((hi - lo) * k) + 'px'; l.style.right = 'auto';
-          svg.setAttribute('viewBox', f(lo) + ' 0 ' + f(hi - lo) + ' 900');
-        } else {
-          l.style.left = l.style.width = l.style.right = '';
-          svg.setAttribute('viewBox', '0 0 1600 900');
-        }
+        var vb = portrait ? f(lo) + ' 0 ' + f(hi - lo) + ' 900' : '0 0 1600 900';
+        if (portrait) { l.style.left = f(innerWidth / 2 - (a - lo) * k) + 'px'; l.style.width = f((hi - lo) * k) + 'px'; l.style.right = 'auto'; }
+        else { l.style.left = l.style.width = l.style.right = ''; }
+        [].forEach.call(l.querySelectorAll(':scope > svg'), function (svg) { svg.setAttribute('viewBox', vb); });
+        if (l.raster) l.raster.doc.setAttribute('viewBox', vb);
       });
     });
   }
@@ -1402,6 +1402,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     // pre-render the neighbouring shot once the reader is past the middle of this one
     var want = p > .45 ? active : (p < .2 ? active - 2 : -1);
     scenes.forEach(function (x, i) { x.classList.toggle('warm', i === want); });
+    if (lite) { paintScene(active - 1); paintScene(want); releaseFar(active); }
     var sc = scenes[active - 1], fxa = fxs[active - 1];
     var pan = portraitMode && sc.dataset.n !== '3' ? -(fxa[1] - fxa[0]) * (reduce ? .5 : p) / 1600 * layerW : 0;
     if (!reduce) {
@@ -1540,15 +1541,74 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   // Phones paint SVG filters on the CPU. A filter on something that moves (a breathing body,
   // a howling head) is recomputed every frame, so on phones moving bodies drop their fur
   // filter and the watercolour noise uses fewer octaves.
+  var lite = false;
   if (window.matchMedia && matchMedia('(max-width: 700px), (pointer: coarse)').matches) {
+    lite = true;
     document.documentElement.classList.add('lite');
+    $('lede').textContent = '根据李微漪《重返狼群》第一章改编。点击画面，故事会慢慢展开。';
     [['wc', 2], ['wcFar', 2], ['fur', 1]].forEach(function (x) { var t = document.querySelector('#' + x[0] + ' feTurbulence'); if (t) t.setAttribute('numOctaves', x[1]); });
     var moving = '.fbreath, .mbreath, .howl, .lick, .wriggle, .pant, .graze, .swish, .nod, .talk, .thumb';
     [].forEach.call(document.querySelectorAll(moving), function (g) {
       if (g.hasAttribute('filter')) g.removeAttribute('filter');
       [].forEach.call(g.querySelectorAll('[filter]'), function (e) { e.removeAttribute('filter'); });
     });
+    [].forEach.call(document.querySelectorAll('.ember'), function (e) { e.remove(); });
+    [].forEach.call(document.querySelectorAll('.haze'), function (e) { e.setAttribute('opacity', '.4'); });
   }
+
+  // Split one layer: everything that moves (by CSS animation or by the scroll-driven acting)
+  // stays in the live SVG; everything else is drawn once into a canvas underneath.
+  var LIVE = '.legA,.legB,.armA,.bob,.talk,.nod,.chew,.beads,.thumb,.steam,.flame,.graze,.swish,.wag,.bark,.jaw,.lean,.pant,.snarl,.teeth,.glint,.earflat,.howl,.vapor,.tuft,.lick,.tongue,.mbreath,.fbreath,.eye,.wriggle,.flag,.orbit,.skirt,.braid,text,' +
+    '#w1,#bowlArm,#men4,#dark4,#eye4,#bowl5,#beads8,#fire8,#den9,#herHands,#herClasp,#w11,#amaSharp,#amaBlur';
+  var sharedDefs = document.querySelector('body > svg defs');
+  function splitLayer(layer) {
+    var svg = layer.querySelector(':scope > svg');
+    if (!svg || svg.classList.contains('drift')) return;
+    var any = false;
+    (function walk(node) {
+      for (var c = node.firstElementChild; c; c = c.nextElementSibling) {
+        if (c.tagName.toLowerCase() === 'defs') continue;
+        if (c.matches(LIVE)) { c.setAttribute('data-live', ''); continue; }
+        if (c.querySelector(LIVE)) { walk(c); continue; }
+        c.setAttribute('data-still', ''); any = true;
+      }
+    })(svg);
+    if (!any) return;
+    var still = svg.cloneNode(true);
+    [].forEach.call(still.querySelectorAll('[data-live]'), function (e) { e.remove(); });
+    [].forEach.call(svg.querySelectorAll('[data-still]'), function (e) { e.remove(); });
+    still.insertBefore(sharedDefs.cloneNode(true), still.firstChild);
+    still.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    still.removeAttribute('class');
+    var cv = document.createElement('canvas');
+    layer.insertBefore(cv, svg);
+    layer.raster = { cv: cv, doc: still, key: '' };
+  }
+  function paintLayer(l) {
+    var r = l.raster; if (!r) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), w = Math.round(l.clientWidth * dpr), h = Math.round(l.clientHeight * dpr);
+    var key = r.doc.getAttribute('viewBox') + '|' + w + 'x' + h;
+    if (!w || !h || r.key === key) return;
+    r.key = key;
+    r.doc.setAttribute('width', w); r.doc.setAttribute('height', h);
+    var url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(r.doc)], { type: 'image/svg+xml' }));
+    var img = new Image();
+    img.onload = function () {
+      if (r.key === key) { r.cv.width = w; r.cv.height = h; r.cv.getContext('2d').drawImage(img, 0, 0, w, h); }
+      URL.revokeObjectURL(url);
+    };
+    img.onerror = function () { URL.revokeObjectURL(url); };
+    img.src = url;
+  }
+  function paintScene(i) { if (lite && i >= 0 && i < N) layers[i].forEach(paintLayer); }
+  // keep bitmaps only for the shot on screen and its neighbours; free the rest
+  function releaseFar(active) {
+    layers.forEach(function (ls, i) {
+      if (Math.abs(i - (active - 1)) <= 1) return;
+      ls.forEach(function (l) { if (l.raster && l.raster.key) { l.raster.key = ''; l.raster.cv.width = l.raster.cv.height = 0; } });
+    });
+  }
+  if (lite) scenes.forEach(function (sc, i) { if (sc.dataset.n !== '3') layers[i].forEach(splitLayer); });
 
   // ---------- reading mode: scroll, or click to step one line at a time ----------
   // Click mode locks manual scrolling and glides the page to each line, so the
@@ -1608,7 +1668,8 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   document.querySelector('.again').addEventListener('click', function (e) { if (mode === 'click') { e.preventDefault(); stepTo(-1); } });
 
   measure(); update();
-  try { if (localStorage.getItem('cflq-reading-mode') === 'click') setMode('click', true); } catch (e) {}
+  if (lite) setMode('click', true);
+  else { try { if (localStorage.getItem('cflq-reading-mode') === 'click') setMode('click', true); } catch (e) {} }
   window.addEventListener('scroll', onScroll, { passive: true });
   document.addEventListener('visibilitychange', function () { if (!document.hidden) sound.wake(); });
   document.addEventListener('touchend', sound.wake, { passive: true });
