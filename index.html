@@ -25,15 +25,27 @@
   --f-sans: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
   --f-hand: "Zhi Mang Xing", "Kaiti SC", "STKaiti", "KaiTi", cursive;
 }
-html { background: var(--paper); }
+html { background: var(--paper); overscroll-behavior-y: none; }
 body { margin: 0; }
 body { background: var(--paper); color: var(--ink); font-family: var(--f-serif); overflow-x: clip; }
 
 .film { position: relative; }
-.stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; background: #cfc6ad; }
+/* the stage uses the LARGE viewport height: when the phone's toolbars slide away nothing is uncovered,
+   and toolbar show/hide never resizes (and repaints) the drawings */
+.stage { position: sticky; top: 0; height: 100vh; height: 100lvh; overflow: hidden; background: #cfc6ad; }
 .scene { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity 1.4s ease, visibility 0s linear 1.4s; }
 .scene.on { opacity: 1; visibility: visible; transition: opacity 1.4s ease, visibility 0s; }
 .scene:not(.on) * { animation-play-state: paused !important; }
+/* fading in, fading out, or pre-rendered just before it is needed: kept on the GPU so the
+   1.4s cross-fade never repaints the watercolour drawings */
+.scene.on, .scene.out, .scene.warm { will-change: opacity; }
+/* phones (html.lite): the small ambient loops that force whole-drawing repaints are switched off */
+.lite .twinkle, .lite .mote, .lite .glow, .lite .haze { animation: none !important; }
+.lite .ember { display: none; }
+/* the moonlit she-wolf keeps her fur texture on phones; only her subtle chest and tail motion stop */
+.lite .chest, .lite .tailsway { animation: none !important; }
+.scene.out { visibility: visible; }
+.scene.warm:not(.on):not(.out) { visibility: visible; opacity: .01; transition: none; }
 .scene[data-n="3"] { background: #4a423a; }
 .layer { position: absolute; top: 0; bottom: 0; left: -4%; right: -4%; }
 .scene.on .layer { will-change: transform; }
@@ -79,7 +91,7 @@ html.click-mode .stage { cursor: pointer; }
 button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 /* narration */
-.beats { position: relative; z-index: 2; margin-top: -100vh; margin-top: -100svh; pointer-events: none; }
+.beats { position: relative; z-index: 2; margin-top: -100vh; margin-top: -100lvh; pointer-events: none; }
 .beat { min-height: 100vh; min-height: 100svh; display: flex; align-items: center; padding-inline: 16px; }
 .card {
   pointer-events: auto; max-width: 25rem; margin-left: max(0px, calc(6vw - 16px));
@@ -243,6 +255,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   .title-beat { align-items: flex-start; padding-block: 12vh 0; }
   .lede { font-size: 1rem; margin-block: .9rem 1.3rem; }
   .shot { top: auto; bottom: calc(env(safe-area-inset-bottom, 0px) + 14px); max-width: calc(100% - 32px); }
+  @supports (height: 100lvh) { .shot { bottom: calc(env(safe-area-inset-bottom, 0px) + 14px + 100lvh - 100svh); } }
   .shot .geo { display: none; }
   .ctrls { right: 12px; gap: 6px; }
   .modes button { padding: 8px 10px; }
@@ -1336,9 +1349,14 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   var portraitMode = false, layerW = 0, fxs = scenes.map(function (sc) {
     var v = (sc.dataset.fx || '800').split(',').map(Number); return [v[0], v.length > 1 ? v[1] : v[0]];
   });
+  var frameKey = '';
   function frame(portrait) {
     portraitMode = portrait;
-    var H = scenes[0].clientHeight || innerHeight;
+    var H = scenes[0].clientHeight || innerHeight, key = portrait + '|' + innerWidth + '|' + H;
+    if (key === frameKey) return;
+    frameKey = key;
+    sketch.setAttribute('preserveAspectRatio', portrait ? 'xMidYMid meet' : 'xMidYMid slice');
+    sketch.setAttribute('viewBox', portrait ? '450 90 1010 800' : '0 0 1600 900');
     layerW = H * 16 / 9;
     // Each layer only renders the slice of the drawing this shot can show (screen width + pan
     // range + parallax margin), so phone GPUs never hold a full-width 16:9 layer at 3x density.
@@ -1368,8 +1386,6 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     linePos = lines.map(function (b) { var r = b.getBoundingClientRect(); return [r.top + y, r.bottom + y]; });
     var portrait = innerWidth / innerHeight < 1;
     frame(portrait);
-    sketch.setAttribute('preserveAspectRatio', portrait ? 'xMidYMid meet' : 'xMidYMid slice');
-    sketch.setAttribute('viewBox', portrait ? '450 90 1010 800' : '0 0 1600 900');
   }
   function update() {
     ticking = false;
@@ -1377,10 +1393,15 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     for (var s = 1; s <= N; s++) if (ranges[s] && ranges[s].start <= mid) active = s;
     var R = ranges[active], p = clamp((mid - R.start) / (R.end - R.start));
     if (active !== current) {
+      var prev = scenes[current - 1];
+      if (prev) { prev.classList.add('out'); setTimeout(function () { if (!prev.classList.contains('on')) prev.classList.remove('out'); }, 1500); }
       scenes.forEach(function (sc, i) { sc.classList.toggle('on', i === active - 1); });
       shot.textContent = labels[active];
       current = active; sound.scene(active);
     }
+    // pre-render the neighbouring shot once the reader is past the middle of this one
+    var want = p > .45 ? active : (p < .2 ? active - 2 : -1);
+    scenes.forEach(function (x, i) { x.classList.toggle('warm', i === want); });
     var sc = scenes[active - 1], fxa = fxs[active - 1];
     var pan = portraitMode && sc.dataset.n !== '3' ? -(fxa[1] - fxa[0]) * (reduce ? .5 : p) / 1600 * layerW : 0;
     if (!reduce) {
@@ -1401,7 +1422,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
 
   // ---------- placeholder sound (synthesised) ----------
   var sound = (function () {
-    var ctx, master, windGain, lp, rev, noiseBuf, on = false, played = {}, cur = 1, timer;
+    var ctx, master, windGain, lp, rev, noiseBuf, silent, on = false, played = {}, cur = 1, timer;
     // [wind level, wind low-pass]: open grassland is loud and bright, inside the tent and the den it is muffled
     var mix = { 1: [.2, 2400], 2: [.05, 500], 3: [.03, 800], 4: [.12, 1100], 5: [.04, 480], 6: [.22, 2600], 7: [.16, 1200], 8: [.04, 450], 9: [.04, 420], 10: [.06, 700], 11: [.2, 2200] };
     function build() {
@@ -1476,14 +1497,29 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
       if (cur === 9 && !played.w) { played.w = 1; whimper(); }
     }
     return {
+      // iOS mutes Web Audio when the ring/silent switch is on unless the page asks for the
+      // "playback" audio session (Safari 17+) or a media element is playing (older iOS).
+      unlock: function () {
+        try { if (navigator.audioSession) navigator.audioSession.type = 'playback'; } catch (e) {}
+        if (!silent) {
+          var n = 4000, buf = new Uint8Array(44 + n), dv = new DataView(buf.buffer), w = function (o, t) { for (var i = 0; i < t.length; i++) buf[o + i] = t.charCodeAt(i); };
+          w(0, 'RIFF'); dv.setUint32(4, 36 + n, true); w(8, 'WAVEfmt '); dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+          dv.setUint32(24, 8000, true); dv.setUint32(28, 8000, true); dv.setUint16(32, 1, true); dv.setUint16(34, 8, true); w(36, 'data'); dv.setUint32(40, n, true);
+          for (var i = 44; i < buf.length; i++) buf[i] = 128;
+          var bin = ''; for (var j = 0; j < buf.length; j++) bin += String.fromCharCode(buf[j]);
+          silent = new Audio('data:audio/wav;base64,' + btoa(bin)); silent.loop = true; silent.setAttribute('playsinline', '');
+        }
+        var pr = silent.play(); if (pr && pr.catch) pr.catch(function () {});
+      },
       toggle: function () {
         if (!ctx && !build()) return false;
         on = !on;
-        if (on) { if (ctx.resume) ctx.resume(); master.gain.setTargetAtTime(.9, ctx.currentTime, .6); apply(); }
-        else master.gain.setTargetAtTime(0, ctx.currentTime, .3);
+        if (on) { this.unlock(); if (ctx.resume) ctx.resume(); master.gain.setTargetAtTime(.9, ctx.currentTime, .6); apply(); }
+        else { master.gain.setTargetAtTime(0, ctx.currentTime, .3); if (silent) silent.pause(); }
         return on;
       },
-      scene: function (n) { cur = n; apply(); }
+      scene: function (n) { cur = n; apply(); },
+      wake: function () { if (on && ctx && ctx.state !== 'running' && ctx.resume) ctx.resume(); }
     };
   })();
 
@@ -1500,6 +1536,19 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   });
 
   scenes.forEach(function (sc) { sc.setAttribute('aria-hidden', 'true'); });
+
+  // Phones paint SVG filters on the CPU. A filter on something that moves (a breathing body,
+  // a howling head) is recomputed every frame, so on phones moving bodies drop their fur
+  // filter and the watercolour noise uses fewer octaves.
+  if (window.matchMedia && matchMedia('(max-width: 700px), (pointer: coarse)').matches) {
+    document.documentElement.classList.add('lite');
+    [['wc', 2], ['wcFar', 2], ['fur', 1]].forEach(function (x) { var t = document.querySelector('#' + x[0] + ' feTurbulence'); if (t) t.setAttribute('numOctaves', x[1]); });
+    var moving = '.fbreath, .mbreath, .howl, .lick, .wriggle, .pant, .graze, .swish, .nod, .talk, .thumb';
+    [].forEach.call(document.querySelectorAll(moving), function (g) {
+      if (g.hasAttribute('filter')) g.removeAttribute('filter');
+      [].forEach.call(g.querySelectorAll('[filter]'), function (e) { e.removeAttribute('filter'); });
+    });
+  }
 
   // ---------- reading mode: scroll, or click to step one line at a time ----------
   // Click mode locks manual scrolling and glides the page to each line, so the
@@ -1561,6 +1610,8 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   measure(); update();
   try { if (localStorage.getItem('cflq-reading-mode') === 'click') setMode('click', true); } catch (e) {}
   window.addEventListener('scroll', onScroll, { passive: true });
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) sound.wake(); });
+  document.addEventListener('touchend', sound.wake, { passive: true });
   window.addEventListener('resize', function () { measure(); if (mode === 'click') stepTo(idx, true); onScroll(); });
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measure(); onScroll(); });
 })();
