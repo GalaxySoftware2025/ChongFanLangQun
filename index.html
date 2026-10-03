@@ -1,3 +1,8 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>草原传闻</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,6 +26,7 @@
   --f-hand: "Zhi Mang Xing", "Kaiti SC", "STKaiti", "KaiTi", cursive;
 }
 html { background: var(--paper); }
+body { margin: 0; }
 body { background: var(--paper); color: var(--ink); font-family: var(--f-serif); overflow-x: clip; }
 
 .film { position: relative; }
@@ -38,6 +44,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--f-serif);
   position: absolute; inset: 0; pointer-events: none; opacity: .5; mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='260'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 .42  0 0 0 0 .37  0 0 0 0 .3  0 0 0 .5 0'/></filter><rect width='100%' height='100%' filter='url(%23g)'/></svg>");
 }
+@media (max-width: 700px) { .grain { mix-blend-mode: normal; opacity: .22; } }
 .vig { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 55%, transparent 55%, rgba(25, 18, 10, .32) 100%); }
 
 .shot {
@@ -257,6 +264,8 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   .scene, .fade, .narr, .narr .txt { transition: none; }
 }
 </style>
+</head>
+<body>
 
 <div class="ctrls">
   <div class="modes" role="group" aria-label="阅读方式"><button type="button" data-mode="scroll" aria-pressed="true">滑动</button><button type="button" data-mode="click" aria-pressed="false">点击</button></div>
@@ -1331,11 +1340,22 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     portraitMode = portrait;
     var H = scenes[0].clientHeight || innerHeight;
     layerW = H * 16 / 9;
+    // Each layer only renders the slice of the drawing this shot can show (screen width + pan
+    // range + parallax margin), so phone GPUs never hold a full-width 16:9 layer at 3x density.
+    var k = layerW / 1600, vis = innerWidth / k, margin = 70;
     scenes.forEach(function (sc, i) {
       if (sc.dataset.n === '3') return;
+      var a = fxs[i][0], b = fxs[i][1];
+      var lo = Math.max(-40, Math.min(a, b) - vis / 2 - margin), hi = Math.min(1640, Math.max(a, b) + vis / 2 + margin);
       layers[i].forEach(function (l) {
-        if (portrait) { l.style.left = f(innerWidth / 2 - fxs[i][0] / 1600 * layerW) + 'px'; l.style.width = f(layerW) + 'px'; l.style.right = 'auto'; }
-        else { l.style.left = l.style.width = l.style.right = ''; }
+        var svg = l.querySelector('svg');
+        if (portrait) {
+          l.style.left = f(innerWidth / 2 - (a - lo) * k) + 'px'; l.style.width = f((hi - lo) * k) + 'px'; l.style.right = 'auto';
+          svg.setAttribute('viewBox', f(lo) + ' 0 ' + f(hi - lo) + ' 900');
+        } else {
+          l.style.left = l.style.width = l.style.right = '';
+          svg.setAttribute('viewBox', '0 0 1600 900');
+        }
       });
     });
   }
@@ -1545,3 +1565,5 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measure(); onScroll(); });
 })();
 </script>
+</body>
+</html>
