@@ -70,6 +70,7 @@ body { background: var(--paper); color: var(--ink); font-family: var(--f-serif);
 }
 .shot span { background: var(--label-bg); padding: 6px 9px; border-radius: 2px; }
 .shot .geo { font-variant-numeric: tabular-nums; opacity: .85; }
+.shot { display: none !important; }   /* shot and place labels are off: the user wants no labels on the picture */
 
 /* top-right controls: reading mode + sound */
 .ctrls { position: fixed; z-index: 20; right: 16px; top: calc(env(safe-area-inset-top, 0px) + 10px); display: flex; gap: 8px; align-items: center; }
@@ -84,13 +85,36 @@ body { background: var(--paper); color: var(--ink); font-family: var(--f-serif);
 .pick-label { font: 500 12px/1 var(--f-sans); letter-spacing: .2em; color: var(--ink-soft); }
 html.click-mode { overflow: hidden; }
 html.click-mode .stage { cursor: pointer; }
-.snd {
+/* volume: a small slider pill next to the sound button; 100 = the mixed level, up to 150 */
+.vol {
   font: 500 12px/1 var(--f-sans); letter-spacing: .08em; color: var(--label-ink);
   background: var(--label-bg); border: 1px solid rgba(236, 229, 214, .35);
-  padding: 9px 12px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 12px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; touch-action: none;
 }
-.snd i { width: 7px; height: 7px; border-radius: 50%; background: rgba(236, 229, 214, .45); }
-.snd[aria-pressed="true"] i { background: #9fd0a6; box-shadow: 0 0 0 3px rgba(159, 208, 166, .25); }
+.vol input { -webkit-appearance: none; appearance: none; width: 92px; height: 22px; margin: 0; background: transparent; cursor: pointer; }
+.vol input::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: rgba(236, 229, 214, .45); }
+.vol input::-moz-range-track { height: 3px; border-radius: 2px; background: rgba(236, 229, 214, .45); }
+.vol input::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5.5px; border-radius: 50%; background: #ece5d6; border: 0; }
+.vol input::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #ece5d6; border: 0; }
+.vol input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+/* auto play: a play/pause button and a speed slider, 0.5×–2× (1× = average reading speed) */
+.auto {
+  font: 500 12px/1 var(--f-sans); letter-spacing: .08em; color: var(--label-ink);
+  background: var(--label-bg); border: 1px solid rgba(236, 229, 214, .35);
+  padding: 2px 12px 2px 2px; border-radius: 999px; display: inline-flex; align-items: center; gap: 8px; touch-action: none;
+}
+.auto button { font: inherit; letter-spacing: inherit; color: inherit; background: transparent; border: 0; padding: 7px 11px 7px 9px; border-radius: 999px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.auto button[aria-pressed="true"] { background: rgba(236, 229, 214, .92); color: #1d1a16; }
+.auto svg { width: 11px; height: 11px; fill: currentColor; display: block; }
+.auto .i-pause, .auto [aria-pressed="true"] .i-play { display: none; }
+.auto [aria-pressed="true"] .i-pause { display: block; }
+.auto output { min-width: 2.9em; font-variant-numeric: tabular-nums; }
+.auto input { -webkit-appearance: none; appearance: none; width: 72px; height: 22px; margin: 0; background: transparent; cursor: pointer; }
+.auto input::-webkit-slider-runnable-track { height: 3px; border-radius: 2px; background: rgba(236, 229, 214, .45); }
+.auto input::-moz-range-track { height: 3px; border-radius: 2px; background: rgba(236, 229, 214, .45); }
+.auto input::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -5.5px; border-radius: 50%; background: #ece5d6; border: 0; }
+.auto input::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #ece5d6; border: 0; }
+.auto input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
 /* narration */
@@ -127,9 +151,10 @@ html.click-mode .nav { display: flex; }
 .eyebrow { font: 500 12px/1.6 var(--f-sans); letter-spacing: .24em; color: var(--ink-soft); margin: 0 0 .9rem; }
 h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacing: .14em; margin: 0; color: var(--ink); text-wrap: balance; }
 .lede { font-size: clamp(1rem, .95rem + .3vw, 1.15rem); line-height: 1.9; color: var(--ink-soft); margin: 1.1rem 0 1.6rem; max-width: 26em; }
-.snd-big { font: 500 14px/1 var(--f-sans); letter-spacing: .1em; cursor: pointer; color: var(--paper); background: var(--ink); border: 0; padding: 13px 18px; border-radius: 2px; }
-.snd-big[aria-pressed="true"] { background: var(--ochre); }
+.pick-note { font: 500 12px/1.5 var(--f-sans); letter-spacing: .12em; color: var(--ink-soft); flex-basis: 100%; }
 .hint { margin-top: 2.4rem; display: flex; align-items: center; gap: 12px; font: 400 12px/1 var(--f-sans); letter-spacing: .2em; color: var(--ink-soft); }
+.credit { margin: 1.4rem 0 0; font: 400 11px/1.7 var(--f-sans); color: var(--ink-soft); opacity: .75; }
+.credit a { color: inherit; }
 .hint::after { content: ""; width: 56px; height: 1px; background: currentColor; transform-origin: left; animation: hint 2.4s ease-in-out infinite; }
 @keyframes hint { 0% { transform: scaleX(.2); opacity: .3 } 60% { transform: scaleX(1); opacity: 1 } 100% { transform: scaleX(1); opacity: 0 } }
 
@@ -235,16 +260,6 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
 .haze { animation: haze 5s ease-in-out infinite alternate; }
 @keyframes haze { from { opacity: .25; transform: translateX(-10px) } to { opacity: .55; transform: translateX(10px) } }
 
-/* ending */
-.end { background: var(--paper); padding-block: 18vh 14vh; padding-inline: 16px; position: relative; z-index: 3; }
-.end-inner { max-width: 40rem; margin: 0 auto; }
-.reel { aspect-ratio: 16 / 9; max-width: 100%; border: 1px dashed #9b958a; border-radius: 2px; display: grid; place-content: center; text-align: center; gap: .6rem; padding: 16px; background: repeating-linear-gradient(135deg, transparent 0 14px, rgba(126, 149, 160, .07) 14px 15px); }
-.reel span { font: 600 1.35rem/1.4 var(--f-serif); letter-spacing: .18em; }
-.reel small { font: 400 .9rem/1.7 var(--f-sans); color: var(--ink-soft); }
-.end h2 { font: 600 1.25rem/1.4 var(--f-serif); letter-spacing: .1em; margin: 3.2rem 0 1rem; }
-.end ul { margin: 0; padding-left: 1.2em; display: grid; gap: .55rem; font: 400 .98rem/1.85 var(--f-sans); color: var(--ink-soft); }
-.next { margin-top: 2.4rem; font: 400 .95rem/1.8 var(--f-sans); color: var(--ink-soft); }
-.again { display: inline-block; margin-top: 1.2rem; font: 500 13px/1 var(--f-sans); letter-spacing: .14em; color: var(--ink); text-underline-offset: 6px; }
 
 @media (max-width: 700px) {
   /* phones: the card sits up in the sky / tent roof, the slate label drops to the bottom,
@@ -262,7 +277,12 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   .shot .geo { display: none; }
   .ctrls { right: 12px; gap: 6px; }
   .modes button { padding: 8px 10px; }
-  .snd { padding: 8px 10px; }
+  .vol { padding: 4px 10px; }
+  .vol input { width: 64px; }
+  .auto { gap: 6px; padding-right: 10px; }
+  .auto button { padding: 7px 9px; }
+  .auto button span { display: none; }
+  .auto input { width: 50px; }
 }
 @media (max-height: 500px) and (orientation: landscape) {
   .title-beat { padding-block: calc(env(safe-area-inset-top, 0px) + 60px) 0; }
@@ -285,7 +305,8 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
 
 <div class="ctrls">
   <div class="modes" role="group" aria-label="阅读方式"><button type="button" data-mode="scroll" aria-pressed="true">滑动</button><button type="button" data-mode="click" aria-pressed="false">点击</button></div>
-  <button class="snd" type="button" data-sound aria-pressed="false"><i></i><span>声音：关</span></button>
+  <div class="auto" role="group" aria-label="自动播放"><button type="button" id="autoBtn" aria-pressed="false" title="自动播放"><svg class="i-play" viewBox="0 0 12 12" aria-hidden="true"><path d="M2,1 L11,6 L2,11Z"/></svg><svg class="i-pause" viewBox="0 0 12 12" aria-hidden="true"><path d="M2,1 h3 v10 h-3Z M7,1 h3 v10 h-3Z"/></svg><span>自动</span></button><input type="range" id="rate" min="0.5" max="2" step="0.25" value="1" aria-label="播放速度"><output id="rateOut" for="rate">1×</output></div>
+  <label class="vol" title="背景音量"><span>音量</span><input type="range" id="vol" min="0" max="150" step="5" value="100" aria-label="背景音量"></label>
 </div>
 
 <!-- shared watercolor filters -->
@@ -442,7 +463,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
           <!-- the bearded herder, left -->
           <path d="M330,740 Q340,590 380,540 Q420,512 462,528 Q500,566 512,740Z" fill="#4a3b30" filter="url(#wc)"/>
           <path d="M380,540 Q420,520 464,534 Q450,556 420,558 Q392,556 380,540Z" fill="#c9b79a" filter="url(#fur)"/>
-          <g transform="translate(424,486)"><g class="talk" style="animation-delay:-2s">
+          <g transform="translate(424,514)"><g class="talk" style="animation-delay:-2s">
             <ellipse cx="4" cy="-30" rx="26" ry="31" fill="#a06e48"/>
             <ellipse cx="14" cy="-24" rx="7" ry="5" fill="#b8664d" opacity=".35"/>
             <path d="M-20,-22 Q-10,12 8,16 Q28,10 30,-18 Q16,-4 6,-4 Q-6,-4 -20,-22Z" fill="#2a211c" filter="url(#fur)"/>
@@ -454,7 +475,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
           <path d="M688,730 Q700,568 730,506 Q762,474 800,472 Q838,474 870,506 Q900,568 912,730Z" fill="#3b2f2a" filter="url(#wc)"/>
           <path d="M800,476 Q790,560 760,640" stroke="#8b6a3a" stroke-width="5" fill="none" opacity=".7"/>
           <path d="M712,612 Q800,630 888,612 L892,638 Q800,656 708,638Z" fill="#8b3b2e" filter="url(#wc)"/>
-          <g transform="translate(800,414)"><g class="nod">
+          <g transform="translate(800,464)"><g class="nod">
             <path d="M-40,-8 Q-48,-72 0,-80 Q48,-72 40,-8 Q30,12 0,14 Q-30,12 -40,-8Z" fill="#2a211c" filter="url(#fur)"/>
             <path d="M-36,-12 Q-44,30 -30,70 M36,-12 Q44,30 30,70" stroke="#2a211c" stroke-width="8" fill="none" stroke-linecap="round"/>
             <ellipse cx="0" cy="-30" rx="28" ry="34" fill="#a9764f"/>
@@ -476,7 +497,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
           </g>
           <!-- the herder brother, right, lifting his bowl -->
           <path d="M1010,740 Q1020,590 1060,540 Q1100,514 1140,528 Q1180,566 1200,740Z" fill="#54453a" filter="url(#wc)"/>
-          <g transform="translate(1104,484)"><g class="talk" style="animation-delay:-4s">
+          <g transform="translate(1102,522)"><g class="talk" style="animation-delay:-4s">
             <ellipse cx="-2" cy="-28" rx="26" ry="31" fill="#a5714b"/>
             <ellipse cx="-14" cy="-20" rx="7" ry="5" fill="#b8664d" opacity=".35"/>
             <path d="M-22,-48 Q-20,-80 4,-80 Q28,-80 26,-48Z" fill="#3a2e26"/>
@@ -518,7 +539,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     </div>
 
     <!-- 03 · 速写本 · 讲述：狼夹与断爪 -->
-    <div class="scene" data-n="3" data-zoom="0">
+    <div class="scene" data-n="3" data-sketch data-zoom="0">
       <div class="layer" data-depth="0.1">
         <svg id="sketch" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
           <rect x="80" y="56" width="1460" height="830" rx="6" fill="#1e1a16" opacity=".45" filter="url(#soft)"/>
@@ -788,7 +809,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
           <!-- the herder brother in profile, chewing -->
           <path d="M440,940 Q450,720 530,656 Q590,624 650,650 Q706,712 716,940Z" fill="#2e241d" filter="url(#wc)"/>
           <path d="M650,650 Q706,712 716,940" stroke="#e0904a" stroke-width="4" fill="none" opacity=".55"/>
-          <g transform="translate(600,616)">
+          <g transform="translate(600,644)">
             <path d="M-10,-110 Q30,-112 44,-80 Q52,-66 58,-56 Q50,-52 48,-46 Q52,-38 46,-32 L-24,-14 Q-38,-44 -34,-80 Q-30,-104 -10,-110Z" fill="#6e4a32"/>
             <path class="chew" d="M44,-32 Q40,-14 24,-6 Q2,0 -20,-12 L-24,-16 Q10,-24 44,-32Z" fill="#6a4630"/>
             <path d="M44,-80 Q52,-66 58,-56 Q50,-52 48,-46 Q52,-38 46,-32 Q40,-14 24,-6" stroke="#f0a45c" stroke-width="3" fill="none" opacity=".75"/>
@@ -800,7 +821,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
           <!-- amala, head bowed -->
           <path d="M840,940 Q850,710 910,660 Q960,636 1010,660 Q1070,710 1080,940Z" fill="#2f241e" filter="url(#wc)"/>
           <path d="M910,660 Q850,710 840,940" stroke="#e0904a" stroke-width="4" fill="none" opacity=".5"/>
-          <g transform="translate(958,622)"><g class="nod" style="animation-duration:9s">
+          <g transform="translate(958,648)"><g class="nod" style="animation-duration:9s">
             <path d="M-42,-14 Q-48,-80 -2,-88 Q44,-80 38,-14 Q28,6 -2,8 Q-32,6 -42,-14Z" fill="#1d1612"/>
             <ellipse cx="-6" cy="-40" rx="28" ry="34" fill="#7a5236"/>
             <path d="M-34,-40 Q-40,-14 -24,0" stroke="#f0a45c" stroke-width="3" fill="none" opacity=".65"/>
@@ -974,11 +995,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
           </g>
           <use id="amaBlur" href="#amaDoor" filter="url(#haze)" opacity="0"/>
           <!-- the mastiff by the tent -->
-          <g transform="translate(470,690)">
-            <ellipse cx="0" cy="-14" rx="42" ry="17" fill="#241d18" filter="url(#fur)"/>
-            <g transform="translate(-34,-22)"><g class="nod" style="animation-duration:6s"><ellipse cx="-12" cy="-6" rx="17" ry="14" fill="#2a221c" filter="url(#fur)"/><path d="M-22,-16 l-6,10 l10,-2Z" fill="#1c1612"/><ellipse cx="-24" cy="-2" rx="9" ry="6" fill="#3a2f27"/></g></g>
-            <g transform="translate(40,-18)"><g class="swish"><path d="M0,0 Q20,-14 16,-32" stroke="#241d18" stroke-width="9" fill="none" stroke-linecap="round" filter="url(#fur)"/></g></g>
-          </g>
+          <g id="dog11"></g>
           <g id="w11"></g>
         </svg>
       </div>
@@ -993,7 +1010,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     <div class="vig"></div>
     <div class="grain"></div>
     <div class="narr hide"><div class="card"><div class="txt" aria-hidden="true"></div><div class="foot"><div class="count" aria-hidden="true"></div><div class="nav"><button type="button" data-step="-1">‹ 上一句</button><button type="button" data-step="1">下一句 ›</button></div></div></div></div>
-    <div class="shot" aria-hidden="true"><span id="shotLabel">镜头 01 · 大全景 · 正午</span><span class="geo">若尔盖 N33°35′ E102°58′</span></div>
+    <div class="shot" aria-hidden="true"><span id="shotLabel">镜头 01 · 大全景 · 正午</span><span class="geo" id="geoLabel">若尔盖 N33°35′ E102°58′</span></div>
   </div>
 
   <div class="beats">
@@ -1003,80 +1020,86 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
         <h1>草原传闻</h1>
         <p class="lede" id="lede">根据李微漪《重返狼群》第一章改编。往下滑动，或者切换到点击模式，故事会慢慢展开。</p>
         <div class="pick">
-          <button class="snd-big" type="button" data-sound aria-pressed="false">开启声音 · 建议戴耳机</button>
+          <span class="pick-note">点一下画面就有声音 · 音量在右上角 · 建议戴耳机</span>
           <span class="pick-mode"><span class="pick-label">阅读方式</span>
           <span class="modes" role="group" aria-label="阅读方式"><button type="button" data-mode="scroll" aria-pressed="true">滑动</button><button type="button" data-mode="click" aria-pressed="false">点击</button></span></span>
         </div>
         <div class="hint" id="hint">向下滑动</div>
+        <p class="credit" id="credit">音效来自 Wikimedia Commons 的公有领域与开放授权录音 · <a href="audio/CREDITS.txt" target="_blank" rel="noopener">来源与授权</a></p>
       </div>
     </section>
-    <section class="beat" data-s="1"><div class="card"><p>四月的若尔盖，海拔将近四千米。空气稀薄，太阳很毒，风从早吹到晚，草原上几乎看不到一棵树。</p></div></section>
-    <section class="beat" data-s="1"><div class="card"><p>藏语里，“若尔盖”的意思是牦牛喜欢的地方。我背着画夹走了一上午，水早就喝完了。</p></div></section>
-    <section class="beat" data-s="1"><div class="card"><p>终于看见一户牧民家。我推门进去，想讨口水喝。</p></div></section>
+    <section class="beat" data-s="1"><div class="card"><p>第一次去若尔盖写生时，我怎么也想不到，这片草原上有一只快要死去的小狼，正等着我听见它。</p></div></section>
+    <section class="beat" data-s="1"><div class="card"><p>这里海拔将近四千米。空气很薄，太阳很烈，大风压着草，几乎没有树能扎下根。只有望不到边的草场，和一道接一道的浅山。</p></div></section>
+    <section class="beat" data-s="1"><div class="card"><p>当地人说，“若尔盖”在藏语里是牦牛喜欢的地方。雪山、经幡、白云底下散开的牛羊——画画的人到了这里，会觉得自由。</p></div></section>
+    <section class="beat" data-s="1"><div class="card"><p>四月，憋了一冬的太阳开始烤人。正午，我背着画夹和行李越走越渴，水早就喝光了，四下连一片树荫都找不到。</p></div></section>
+    <section class="beat" data-s="1"><div class="card"><p>终于，草场上出现了一户牧民家。我推门进去，想讨一口水喝。</p></div></section>
 
-    <section class="beat" data-s="2" data-tone="dark"><div class="card"><p>老阿妈端出酥油茶，又揉了一块糌粑递给我。几个会说汉话的牧民围着桌子坐下，和我拉起家常。</p></div></section>
-    <section class="beat" data-s="2" data-tone="dark"><div class="card"><p>聊着聊着，说起了草原上新近的一件事。</p></div></section>
-    <section class="beat" data-s="2" data-tone="dark"><div class="card"><p>“很久没见过那样的狼了。”阿妈褪下手上的佛珠，一颗一颗数着。</p></div></section>
+    <section class="beat" data-s="2" data-tone="dark"><div class="card"><p>草原深处很少来汉族客人，他们格外热情。老阿妈端出酥油茶，又揉了一块糌粑塞到我手里。</p></div></section>
+    <section class="beat" data-s="2" data-tone="dark"><div class="card"><p>几个会说些汉话的牧民围着桌子坐下，东一句西一句地跟我聊。聊着聊着，说起了最近草原上传开的一件狼的事。</p></div></section>
+    <section class="beat" data-s="2" data-tone="dark"><div class="card"><p>我从小就是个动物迷，一听就坐直了。</p></div></section>
+    <section class="beat" data-s="2" data-tone="dark"><div class="card"><p>老阿妈在我对面坐下，褪下手腕上的佛珠，一颗一颗地数：“很久没见过那样的狼了。”</p></div></section>
 
-    <section class="beat" data-s="3"><div class="card"><p>前些日子，一匹大公狼钻进羊圈，叼走了一只羊。猎人在附近下了狼夹子。</p></div></section>
-    <section class="beat" data-s="3"><div class="card"><p>几天后，夹子找到了。上面只剩一只咬断的狼爪。</p></div></section>
-    <section class="beat" data-s="3"><div class="card"><p>狼咬断了自己的前爪，跑了。</p></div></section>
+    <section class="beat" data-s="3"><div class="card"><p>她说，前些日子，一匹大公狼钻进别人家的羊圈，叼走了一只羊。</p></div></section>
+    <section class="beat" data-s="3" data-cue="trap"><div class="card"><p>丢羊的消息一传开，猎人就去下了狼夹子。没过几天，夹子不见了。</p></div></section>
+    <section class="beat" data-s="3" data-cue="paw"><div class="card"><p>后来夹子找着了，上面只剩一只狼爪。狼跑了。</p></div></section>
+    <section class="beat" data-s="3" data-cue="bit"><div class="card"><p>“狼会咬断自己的爪子？”我吃了一惊。这种事我只在小说里读到过，一直当故事看。</p></div></section>
+    <section class="beat" data-s="3"><div class="card"><p>“草原上的狼，狠着呢。”阿妈连连点头。</p></div></section>
 
-    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>三只爪子爬不上山。藏狗循着血迹追上来，他躲进山脚乱石堆的石缝里，狼头朝外。</p></div></section>
-    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>第一只冲进去的狗，没能再出来。剩下的狗只敢守在外面叫。</p></div></section>
-    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>猎人把藏刀绑在马棒上，捅进了石缝。</p></div></section>
-    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>“刀伤全在头上，身上一点伤都没有。”牧民大哥说，“他到死都是迎着刀往上咬。”</p><p>只剩一只眼睛，还死盯着杀他的人。</p></div></section>
+    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>阿妈断断续续地讲，旁边的牧民七嘴八舌地补。我在心里一点点拼出当时的样子。</p></div></section>
+    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>公狼拖着夹子跑不远，就咬断伤爪，翻身逃命。几只藏狗闻着血腥味追了上去。</p></div></section>
+    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>三只脚爬不上山。他钻进山脚乱石堆的一道石缝，头朝外，守住缝口。</p></div></section>
+    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>一只年轻的狗以为瘸狼好欺负，一头往里冲，再也没出来。剩下的狗不敢再进，只围在外面狂叫。</p></div></section>
+    <section class="beat" data-s="4" data-tone="dark" data-cue="men"><div class="card"><p>猎人和牧民赶到，把藏刀绑在马棒头上，伸进石缝里乱捅，直到里面再没有动静。</p></div></section>
+    <section class="beat" data-s="4" data-tone="dark"><div class="card"><p>“刀伤全在头上、眼睛上、脖子上，身上一点伤都没有。”牧民大哥说，“他到死都是迎着刀往上咬。”</p></div></section>
+    <section class="beat" data-s="4" data-tone="dark" data-cue="dark"><div class="card"><p>他的头几乎被捅烂了，只剩一只眼睛，还死死盯着杀他的人。</p></div></section>
 
-    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>我咽了一口茶，下意识摸了摸喉咙，好像那一刀是捅进了我的喉管。</p></div></section>
-    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>阿妈一颗颗拨着佛珠：“最可怜的是后来那只母狼。刚生了狼崽没多久。”</p></div></section>
-    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>母狼带崽的时候守在洞里，打猎养家的是公狼。所以他才会去偷羊。</p></div></section>
+    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>我艰难地咽下一口茶，摸了摸自己的喉咙，好像那一刀扎进的是我的喉管。</p></div></section>
+    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>大胡子牧民倒有几分羡慕：“那猎人运气好，得了一张差不多完整的狼皮，就缺一条腿。”</p></div></section>
+    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>我垂下眼睛。我是看《动物世界》长大的，可狼在我心里一直不一样：神秘、冷峻，让人敬畏。</p></div></section>
+    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>能狠下心咬断自己的脚，拿一条腿去换一条命，我知道的动物里只有狼。可他终究没能逃掉。</p></div></section>
+    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>阿妈拨着佛珠，脸上露出不忍：“最可怜的是后来那只母狼。刚生了狼崽没多久……”</p></div></section>
+    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>“还有一只带崽的母狼？”“是呀，”阿妈说，“所以公狼才会去偷羊。”</p></div></section>
+    <section class="beat" data-s="5" data-tone="dark"><div class="card"><p>我知道，母狼带崽的时候守在洞里，打猎养家全靠公狼。可狼向来躲着人，吃了那么多亏，他怎么还要去冒这个险？</p></div></section>
 
-    <section class="beat" data-s="6"><div class="card"><p>“他去抓野牛野羊不行吗？”我问。</p></div></section>
-    <section class="beat" data-s="6"><div class="card"><p>大胡子牧民干笑了几声：“你一路走过来，看见有吗？”</p></div></section>
-    <section class="beat" data-s="6"><div class="card"><p>斑羚、麂子、青羊、狍子……这些早就被人打光了。</p><p>我突然憎恨起人来。</p></div></section>
+    <section class="beat" data-s="6"><div class="card"><p>“真傻。他死了，那一窝怎么活？去抓野牛野羊不行吗？”</p></div></section>
+    <section class="beat" data-s="6"><div class="card"><p>大胡子干笑了几声：“野牛野羊？你一路走过来，看见有吗？”</p></div></section>
+    <section class="beat" data-s="6"><div class="card"><p>斑羚、麂子、青羊、狍子、鹿……我把能想到的都问了一遍。他只是摇头：真有的话，早被人打光了，哪还轮得到狼。</p></div></section>
+    <section class="beat" data-s="6"><div class="card"><p>我心里一沉，明白了公狼为什么要拿命去偷羊。我突然憎恨起人来。</p></div></section>
 
-    <section class="beat" data-s="7" data-tone="dark"><div class="card"><p>公狼死后，母狼像疯了一样。大白天闯进牧场，接连咬死了三四只羊。</p></div></section>
-    <section class="beat" data-s="7" data-tone="dark"><div class="card"><p>到了晚上，她就跑到公狼被杀的地方，一声接一声地嚎。</p></div></section>
-    <section class="beat" data-s="7" data-tone="dark"><div class="card"><p>狗撵不走她，见了人也不躲。她是在跟人玩命。</p></div></section>
+    <section class="beat" data-s="7" data-tone="dark"><div class="card"><p>牧民大哥接着说：公狼死后，母狼像疯了一样，大白天闯进牧场，一连咬死了三四只羊。</p></div></section>
+    <section class="beat" data-s="7" data-tone="dark"><div class="card"><p>到了夜里，她就跑上山头，或者回到公狼被杀的地方，一声接一声地嚎。牧民们天天提心吊胆。</p></div></section>
+    <section class="beat" data-s="7" data-tone="dark"><div class="card"><p>“有人见过她吗？”我问。</p></div></section>
+    <section class="beat" data-s="7" data-tone="dark"><div class="card"><p>“怎么没见过。狗撵不走她，见了人也不躲。”他摆摆手，“她是在跟人玩命。”</p></div></section>
 
-    <section class="beat" data-s="8" data-tone="dark"><div class="card"><p>猎人们找到了狼窝。母狼不在，窝里还有小狼崽。</p></div></section>
-    <section class="beat" data-s="8" data-tone="dark"><div class="card"><p>牧民大哥嚼着糌粑，停了好一会儿，才接着说：后来，他们投了毒肉。</p></div></section>
-    <section class="beat" data-s="8" data-tone="dark"><div class="card"><p>中了毒的母狼，自己用牙把背上的皮撕烂了。死都没让人得到那张狼皮。</p></div></section>
-    <section class="beat" data-s="8" data-tone="dark"><div class="card"><p>阿妈手上的珠串，停住了。</p></div></section>
+    <section class="beat" data-s="8" data-tone="dark"><div class="card"><p>为了除掉后患，猎人们四处搜，找到了狼窝。母狼不在，窝里还藏着小狼崽。</p></div></section>
+    <section class="beat" data-s="8" data-tone="dark"><div class="card"><p>有人说掏了狼崽、炸掉狼窝；有人说留一只活的，再折断它的后腿，让母狼一辈子拖着它；也有人说先别动，拿狼崽把母狼引回来，还能多得一张皮。</p></div></section>
+    <section class="beat" data-s="8" data-tone="dark"><div class="card"><p>说到这里，牧民大哥咬了口糌粑，慢慢嚼着，看了看阿妈，好一会儿没往下说。我急着等他。</p></div></section>
+    <section class="beat" data-s="8" data-tone="dark"><div class="card"><p>“后来，他们投了毒肉。”毒死的狼，皮最完整。“可谁也没想到，那母狼自己用牙把背上的皮撕烂了。死都没让人得到。”</p></div></section>
+    <section class="beat" data-s="8" data-tone="dark" data-cue="stop"><div class="card"><p>阿妈手上的珠串，停住了。</p></div></section>
 
-    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>母狼临死前爬回狼窝，挨个舔她的孩子。</p></div></section>
-    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>她盯着围上来的人嗥叫，嗥得人心颤，一直嗥到咽气。</p></div></section>
-    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>“她不是被毒死的。”阿妈说，“公狼死了，她也不想活了。”</p></div></section>
-    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>六只狼崽，都还没睁眼。听说，被人掏走了。</p></div></section>
+    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>母狼临死前爬回狼窝，把她的孩子一只一只舔过去。</p></div></section>
+    <section class="beat" data-s="9" data-tone="dark" data-cue="howl"><div class="card"><p>然后她盯着围上来的人嗥叫，嗥到嘴里喷血，嗥得人心里发颤，一直嗥到咽气。</p></div></section>
+    <section class="beat" data-s="9" data-tone="dark" data-cue="still"><div class="card"><p>“其实她不是‘被’毒死的。”阿妈特意咬重了那个“被”字。</p></div></section>
+    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>那种毒药味道冲，连狗都骗不过。她咬死那么多羊都不吃，偏偏去吞那块毒肉。“公狼死了，她也不想活了。”</p></div></section>
+    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>“她就不心疼那窝崽吗？”我心里一阵阵拧着疼。</p></div></section>
+    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>“心疼有什么用？”没了公狼找食，狼窝又被人发现，拖着一窝崽搬不远。母狼不会丢下孩子自己逃，横竖是死。</p></div></section>
+    <section class="beat" data-s="9" data-tone="dark"><div class="card"><p>六只小狼崽，眼睛都还没睁开。听说被人掏走了，多半活不成。</p></div></section>
 
+    <section class="beat" data-s="10"><div class="card"><p>“这是什么时候的事？被谁掏走的？那人住哪儿？我想去看看那窝狼崽。”</p></div></section>
+    <section class="beat" data-s="10"><div class="card"><p>“前两天河边来的人说的。这里没电话，也不知道是哪一家。你顺着河往上走，路上再打听打听。”</p></div></section>
     <section class="beat" data-s="10"><div class="card"><p>“你想见小狼崽？母狼都死了，你只能见到一窝死狼崽了。”</p></div></section>
-    <section class="beat" data-s="10"><div class="card"><p>可我耳边，好像已经响起了狼崽微弱的呼救声。我要知道它们最后的命运。</p></div></section>
-    <section class="beat" data-s="10"><div class="card"><p>阿妈把那串一直数着的佛珠放进我手心，双手握紧，念着我听不懂的话。</p></div></section>
+    <section class="beat" data-s="10"><div class="card"><p>要是城里人饭后吹的牛，我听听也就算了。可这些话出自有信仰的人，我信。耳边好像真的响起了狼崽细细的呼救声。</p></div></section>
+    <section class="beat" data-s="10"><div class="card"><p>我要知道它们最后的命运。我起身收拾行囊，灌满一大壶水。阿妈留我：“太热了，等太阳下去再走吧。”“越早越好，阿妈。”</p></div></section>
+    <section class="beat" data-s="10" data-cue="give"><div class="card"><p>阿妈的手在发抖。她把那串一直数着的佛珠，放进了我的手心。</p></div></section>
+    <section class="beat" data-s="10" data-cue="clasp"><div class="card"><p>她双手握紧我的手，念着我听不懂的话，又摸了摸我的额头。</p></div></section>
 
-    <section class="beat" data-s="11"><div class="card"><p>我灌满一大壶水，顶着正午的太阳出发了。</p></div></section>
-    <section class="beat" data-s="11"><div class="card"><p>老阿妈倚在门口的身影，渐渐模糊。</p></div></section>
+    <section class="beat" data-s="11"><div class="card"><p>我双手合十和她道别，带着她的祝福出发了。</p></div></section>
+    <section class="beat" data-s="11"><div class="card"><p>正午的太阳还是很毒。我沿着河，往上游走。</p></div></section>
+    <section class="beat" data-s="11"><div class="card"><p>回头望时，老阿妈倚在门口的身影，渐渐模糊了。</p></div></section>
     <section class="beat" data-s="11"><div class="card"><p>那时我还不知道，那窝狼崽里有一只，会影响我的一生。</p></div></section>
   </div>
 </div>
 
-<section class="end" id="end">
-  <div class="end-inner">
-    <p class="eyebrow">第一部分 · 完</p>
-    <div class="reel" role="img" aria-label="片尾真实影像的预留位置">
-      <span>片尾 · 真实影像</span>
-      <small>完整版会在这里接入真实的照片或影像（需取得授权）</small>
-    </div>
-    <h2>关于这一部分</h2>
-    <ul>
-      <li>内容：第一章前段。在牧民家听到公狼断爪、母狼殉情的故事，决定去找那窝狼崽。共 11 个镜头。</li>
-      <li>旁白根据原著第一章压缩改写，部分对白沿用原文。公开发布前需要取得原著的改编授权。</li>
-      <li>画面全部由网页实时绘制，没有使用视频或图片文件。激烈情节（石缝、毒肉）只用关键画面和光线暗示，不直接表现。</li>
-      <li>风声、狗吠、狼嚎、狼崽的叫声和佛珠的轻响都是程序合成的占位音效，正式版应换成真实录音和旁白配音。</li>
-    </ul>
-    <p class="next">下一部分：《寻狼之路》</p>
-    <a class="again" href="#top">回到开头</a>
-  </div>
-</section>
 
 <script>
 (function () {
@@ -1142,16 +1165,91 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
       '<ellipse cx="0" cy="-10" rx="11" ry="7" fill="#ece6d6"/>' +
       '<g transform="translate(-9,-12)"><g class="graze" style="animation-delay:-' + d + 's;animation-duration:7s"><ellipse cx="-4" cy="2" rx="4" ry="3" fill="#3a332c"/></g></g></g>';
   }
-  // Tibetan dog, facing right toward the crevice, feet at y=0
-  function dog(x, y, s, d) {
+  // Tibetan mastiff, facing right, feet at y=0: big-boned and square, a lion's mane round the neck and
+  // shoulders, broad head with a short blunt muzzle and hanging lips, dropped ears, feathered legs on
+  // big feet, and a plumed tail curled over the back. Black and tan unless o says otherwise.
+  // Long coat is drawn as a ragged outline of hanging tufts (no fur filter, so it stays cheap on phones).
+  function shag(cx, cy, rx, ry, n, amp, a0, a1, seed) {
+    a0 = a0 === undefined ? 0 : a0; a1 = a1 === undefined ? Math.PI * 2 : a1; seed = seed || 1;
+    var pt = function (a, r) { return [cx + Math.cos(a) * rx * r, cy + Math.sin(a) * ry * r]; }, p0 = pt(a0, 1), d = 'M' + f(p0[0]) + ',' + f(p0[1]);
+    for (var k = 0; k < n; k++) {
+      var am = a0 + (a1 - a0) * (k + .5) / n, a2 = a0 + (a1 - a0) * (k + 1) / n,
+        j = .6 + .4 * Math.abs(Math.sin(seed * 12.9898 + k * 78.233)), tip = pt(am, 1 + amp * j), e = pt(a2, 1);
+      tip[1] += amp * ry * .45 * j;
+      d += ' Q' + f(tip[0]) + ',' + f(tip[1]) + ' ' + f(e[0]) + ',' + f(e[1]);
+    }
+    return d + 'Z';
+  }
+  function mastiffCols(o) {
+    o = o || {};
+    return { coat: o.coat || '#1c1714', sh: o.sh || '#0f0c0a', tan: o.tan || '#8a5a32', mouth: '#4a1a18' };
+  }
+  // head origin = where the head sits on the neck; skull centre at (8,-6); facing right
+  function mastiffHead(c, d, cls) {
+    var open = cls === 'bark';
+    return '<g class="' + cls + '" style="animation-delay:-' + d + 's">' +
+      // one silhouette: domed skull, a short drop at the stop, a short deep muzzle cut off square, heavy flews
+      '<path d="M-22,0 Q-26,-30 0,-36 Q22,-38 30,-22 Q40,-20 48,-16 Q55,-13 54,-4 Q54,6 51,10 Q51,20 42,23 Q30,26 16,22 Q-6,20 -22,0Z" fill="' + c.coat + '"/>' +
+      // tan on the lower muzzle, flews and cheeks; the bridge stays dark
+      '<path d="M28,-12 Q40,-12 52,-6 Q54,6 51,10 Q51,20 42,23 Q30,26 16,22 Q2,18 2,6 Q6,-6 18,-6 Q22,-12 28,-12Z" fill="' + c.tan + '"/>' +
+      '<path d="M30,12 Q40,16 49,11" stroke="' + c.sh + '" stroke-width="1.6" fill="none" opacity=".6"/>' +
+      '<path d="M46,-16 Q56,-16 56,-8 Q56,-2 50,-2 Q44,-3 44,-9Z" fill="#070605"/>' +
+      '<ellipse cx="16" cy="-26" rx="5" ry="3.4" fill="' + c.tan + '"/>' +
+      // small deep-set eye under a heavy brow
+      '<path d="M8,-16 Q15,-21 23,-16" stroke="' + c.sh + '" stroke-width="3.2" fill="none" stroke-linecap="round"/>' +
+      '<path d="M10,-14 Q16,-17 21,-13 Q16,-11 10,-14Z" fill="#070605"/><circle cx="17" cy="-14" r=".9" fill="#d8c8a0" opacity=".8"/>' +
+      // dropped ear, mostly sunk in the mane
+      '<path d="M-6,-28 Q-20,-22 -20,-2 Q-12,6 -4,-4 Q2,-16 -2,-28Z" fill="' + c.sh + '"/>' +
+      (open ? '<g transform="translate(24,14)"><path d="M0,-4 L27,-6 L24,4Z" fill="' + c.mouth + '"/>' +
+        '<path d="M21,-6 l2,4 l2,-4Z M15,-5 l1.5,3 l1.5,-3Z" fill="#e8e0cc"/>' +
+        '<g class="jaw" style="animation-delay:-' + d + 's"><path d="M0,0 L24,-1 Q24,8 16,10 Q6,10 0,6Z" fill="' + c.tan + '"/>' +
+        '<path d="M6,1 Q13,6 20,1" fill="#b04848"/></g></g>' : '') +
+      '</g>';
+  }
+  // standing four-square and barking; withers ~120 high, nose to tail ~220 long
+  function dog(x, y, s, d, o) {
+    var c = mastiffCols(o), leg = function (pts, w, col) { return '<path d="M' + pts.join(' L') + '" stroke="' + col + '" stroke-width="' + w + '" fill="none" stroke-linecap="round" stroke-linejoin="round"/>'; },
+      paw = function (cx, col) { return '<path d="M' + (cx - 13) + ',0 Q' + (cx - 14) + ',-12 ' + cx + ',-12 Q' + (cx + 15) + ',-12 ' + (cx + 15) + ',0Z" fill="' + col + '"/>'; };
     return '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')"><g class="lean" style="animation-delay:-' + d + 's">' +
-      '<path d="M-40,-40 Q-10,-52 26,-46 Q40,-40 36,-26 L-36,-24 Q-48,-30 -40,-40Z" fill="#141316"/>' +
-      '<path d="M-30,-26 L-34,0 M-18,-26 L-16,0 M20,-28 L22,0 M30,-28 L34,0" stroke="#141316" stroke-width="7" stroke-linecap="round"/>' +
-      '<g transform="translate(-40,-38)"><path class="wag" d="M0,0 Q-16,-10 -12,-28" stroke="#141316" stroke-width="7" fill="none" stroke-linecap="round"/></g>' +
-      '<g transform="translate(28,-44)"><g class="bark" style="animation-delay:-' + d + 's">' +
-      '<path d="M0,0 Q6,-14 18,-14 L32,-8 Q34,-3 30,-1 L12,0 Q6,6 0,6Z" fill="#141316"/><path d="M8,-12 L10,-24 L16,-13Z" fill="#141316"/>' +
-      '<g transform="translate(14,0)"><path class="jaw" style="animation-delay:-' + d + 's" d="M0,0 L16,0 Q14,5 0,5Z" fill="#141316"/></g>' +
-      '</g></g></g></g>';
+      // far legs (shadowed), tan stockings
+      leg(['-50,-78', '-44,-52', '-62,-26', '-58,-6'], 20, c.sh) + leg(['-61,-24', '-58,-7'], 13, c.tan) + paw(-56, c.tan) +
+      leg(['26,-74', '24,-6'], 22, c.sh) + leg(['24,-36', '24,-7'], 15, c.tan) + paw(28, c.tan) +
+      // deep barrel with long hair hanging from the underline
+      '<path d="M-82,-104 Q-90,-80 -76,-64 Q-60,-54 -36,-58 L20,-58 Q50,-52 62,-74 L64,-122 Q30,-134 -20,-128 Q-70,-128 -82,-104Z" fill="' + c.coat + '"/>' +
+      '<path d="' + shag(-6, -62, 50, 8, 9, 1, Math.PI * 1.04, Math.PI * -.04, 3) + '" fill="' + c.coat + '"/>' +
+      // near hind: heavy thigh with tan trousers behind, angled hock, tan below
+      '<path d="' + shag(-64, -86, 28, 32, 11, .14, 0, Math.PI * 2, 5) + '" fill="' + c.coat + '"/>' +
+          leg(['-60,-74', '-52,-50', '-72,-26', '-68,-6'], 24, c.coat) + leg(['-71,-26', '-68,-7'], 16, c.tan) + paw(-66, c.tan) +
+      // near front: a straight thick column, tan from the knee down, feathering behind
+      leg(['46,-74', '48,-6'], 26, c.coat) + leg(['48,-40', '48,-7'], 18, c.tan) + paw(53, c.tan) +
+      '<path d="' + shag(38, -50, 6, 18, 4, .8, Math.PI * .5, Math.PI * 1.5, 7) + '" fill="' + c.coat + '"/>' +
+      // big plume curled forward over the back, tan underneath
+      '<g transform="translate(-74,-122)"><g class="wag" style="animation-duration:.8s">' +
+      '<g transform="rotate(-48)"><path d="' + shag(30, 0, 40, 24, 13, .3, 0, Math.PI * 2, 9) + '" fill="' + c.coat + '"/>' +
+      '<path d="M6,6 Q30,16 58,6" stroke="' + c.tan + '" stroke-width="5" fill="none" opacity=".7" stroke-linecap="round"/>' +
+      '<path d="M8,-6 Q32,-20 60,-8 Q68,2 58,6" stroke="' + c.sh + '" stroke-width="3" fill="none" opacity=".8"/></g></g></g>' +
+      // the mane: a lion's ruff that stands up behind the head and falls to a deep bib
+      '<path d="' + shag(46, -126, 58, 62, 19, .2, 0, Math.PI * 2, 11) + '" fill="' + c.coat + '"/>' +
+      '<path d="' + shag(66, -94, 24, 30, 8, .25, -Math.PI * .4, Math.PI * .9, 15) + '" fill="' + c.coat + '"/>' +
+      '<path d="M18,-168 q12,16 8,40 M32,-180 q14,18 10,46 M6,-140 q10,12 8,30 M60,-96 q-2,12 -8,22 M30,-100 q4,12 0,26" stroke="' + c.sh + '" stroke-width="3" fill="none" opacity=".8"/>' +
+      '<path d="M62,-92 q8,4 10,14 q-8,2 -14,-4Z M78,-102 q6,6 4,14 q-6,0 -8,-6Z" fill="' + c.tan + '" opacity=".75"/>' +
+      '<g transform="translate(64,-150) scale(1.22)">' + mastiffHead(c, d, 'bark') + '</g>' +
+      '</g></g>';
+  }
+  // lying down, head up, forepaws out in front, facing right; ground at y=0
+  function dogLie(x, y, s, d, o) {
+    var c = mastiffCols(o);
+    return '<g transform="translate(' + x + ',' + y + ') scale(' + s + ')">' +
+      '<path d="M-84,0 Q-92,-44 -58,-58 Q0,-66 36,-52 L50,0Z" fill="' + c.coat + '"/>' +
+      '<path d="' + shag(-54, -30, 30, 30, 10, .14, 0, Math.PI * 2, 5) + '" fill="' + c.coat + '"/>' +
+      '<g transform="translate(-66,-56)"><g class="swish">' +
+      '<g transform="rotate(-34)"><path d="' + shag(26, 0, 34, 15, 11, .3, 0, Math.PI * 2, 9) + '" fill="' + c.coat + '"/>' +
+      '<path d="M6,6 Q28,14 52,6" stroke="' + c.tan + '" stroke-width="4" fill="none" opacity=".6" stroke-linecap="round"/></g></g></g>' +
+      '<path d="M30,-9 L92,-8" stroke="' + c.coat + '" stroke-width="18" stroke-linecap="round"/>' +
+      '<path d="M70,-8 L96,-8" stroke="' + c.tan + '" stroke-width="13" stroke-linecap="round"/>' +
+      '<path d="' + shag(44, -68, 44, 52, 16, .2, 0, Math.PI * 2, 11) + '" fill="' + c.coat + '"/>' +
+      '<path d="M58,-34 q8,4 10,14 q-8,2 -14,-4Z" fill="' + c.tan + '" opacity=".6"/>' +
+      '<g transform="translate(56,-92) scale(1.22)">' + mastiffHead(c, d, 'nod') + '</g></g>';
   }
   // cub, curled, eyes not yet open; head toward -x
   function cub(x, y, rot, col, d, wr) {
@@ -1199,7 +1297,8 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   (function () {
     var g = $('g4stars'), r = rng(61);
     for (var i = 0; i < 70; i++) { var c = el('circle', { cx: f(r() * 1600), cy: f(r() * 330), r: f(.6 + r() * 1.4), fill: '#dfe4ee', opacity: f(.3 + r() * .5), 'class': 'twinkle' }, g); c.style.animationDelay = '-' + f(r() * 4) + 's'; }
-    $('g4dogs').innerHTML = dog(470, 724, 1.25, 0) + dog(600, 712, 1.05, 1.1) + dog(380, 736, 1.4, 1.7);
+    var night = { coat: '#141316', sh: '#0a090b', tan: '#4a3a30' };
+    $('g4dogs').innerHTML = dog(640, 700, .6, 1.1, night) + dog(500, 722, .74, 0, night) + dog(300, 752, .92, 1.7, night);
     var fg = $('g4fg'), q = rng(67);
     for (var k = 0; k < 40; k++) {
       var bx = k < 20 ? q() * 360 : 1260 + q() * 360, h = 140 + q() * 240, ln = (q() - .5) * 140;
@@ -1264,6 +1363,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     grass('g11fg', 460, 103, { x0: -30, x1: 1630, w: 2.4, colors: ['#8a7a45', '#b29c62', '#7c8250', '#c4ad70'], base: function (x, r) { return hill(x) + 4 + r() * 130; }, h: function (b, r) { return 12 + r() * 26; } });
     flags('g11flags', 790, 546, 930, 560, 9, 12);
     $('w11').innerHTML = walker();
+    $('dog11').innerHTML = '<g transform="translate(470,692) scale(-1,1)">' + dogLie(0, 0, .5, 0, { coat: '#241c16', sh: '#16110d', tan: '#7a5434' }) + '</g>';
   })();
 
   // ---------- scroll direction ----------
@@ -1291,10 +1391,12 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   var layers = scenes.map(function (s) { return [].slice.call(s.querySelectorAll('.layer')); });
   var N = scenes.length;
   var labels = { 1: '镜头 01 · 大全景 · 正午', 2: '镜头 02 · 中景 · 牧民帐篷', 3: '镜头 03 · 速写本 · 讲述', 4: '镜头 04 · 夜 · 石缝 · 讲述', 5: '镜头 05 · 特写 · 茶碗与佛珠', 6: '镜头 06 · 大全景 · 空草场', 7: '镜头 07 · 长焦 · 月夜山头', 8: '镜头 08 · 近景 · 炉火', 9: '镜头 09 · 贴地 · 狼窝', 10: '镜头 10 · 特写 · 手心', 11: '镜头 11 · 远景 · 午后' };
-  var shot = $('shotLabel');
+  var shot = $('shotLabel'), geo = $('geoLabel'), GEO = geo.textContent;
   var pens = [].slice.call(document.querySelectorAll('#pen3 .pen'));
   var lens = pens.map(function (p) { var l = 400; try { l = p.getTotalLength(); } catch (e) {} p.style.strokeDasharray = l; p.style.strokeDashoffset = l; return l; });
   var sketch = $('sketch'), ranges = {}, current = 0, ticking = false;
+  // cue points: where in its shot (0..1) a line marked data-cue begins, so actions land on that line
+  var C = {};
 
   // per-shot, scroll-driven acting
   var act = {
@@ -1304,37 +1406,38 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
       var dk = clamp(p / .4), n = pens.length;
       pens.forEach(function (pth, i) { var a = i / n * .7, k = clamp((dk - a) / .3); pth.style.strokeDashoffset = lens[i] * (1 - k); });
       $('wash3').setAttribute('opacity', f(clamp((p - .3) / .25)));
-      $('nTrap').setAttribute('opacity', p > .2 ? 1 : 0);
-      $('nPaw').setAttribute('opacity', p > .45 ? 1 : 0);
-      $('nBit').setAttribute('opacity', p > .74 ? 1 : 0);
+      $('nTrap').setAttribute('opacity', p >= C.trap ? 1 : 0);
+      $('nPaw').setAttribute('opacity', p >= C.paw ? 1 : 0);
+      $('nBit').setAttribute('opacity', p >= C.bit ? 1 : 0);
     },
     4: function (p) {
-      $('men4').setAttribute('opacity', p > .5 ? 1 : 0);
-      $('pole4').setAttribute('transform', 'translate(' + f(-clamp((p - .55) / .15) * 60) + ',0)');
-      $('blade4').setAttribute('opacity', f(.5 + bell(p, .62, .74) * .5));
-      var dk = clamp((p - .76) / .14);
+      var m = C.men, gap = C.dark - C.men;
+      $('men4').setAttribute('opacity', p >= m ? 1 : 0);
+      $('pole4').setAttribute('transform', 'translate(' + f(-clamp((p - m - gap * .1) / (gap * .3)) * 60) + ',0)');
+      $('blade4').setAttribute('opacity', f(.5 + bell(p, m + gap * .25, m + gap * .5) * .5));
+      var dk = clamp((p - C.dark) / ((1 - C.dark) * .5));
       $('dark4').setAttribute('opacity', f(dk * .9));
       $('eye4').setAttribute('opacity', f(dk));
     },
     5: function (p) { $('bowl5').setAttribute('transform', 'translate(0,' + f(-bell(p, 0, .3) * 46) + ')'); },
     8: function (p) {
-      $('beads8').classList.toggle('stopped', p > .76);
-      $('fire8').setAttribute('transform', 'translate(800,878) scale(' + f(1 - clamp((p - .5) / .4) * .3) + ')');
+      $('beads8').classList.toggle('stopped', p >= C.stop);
+      $('fire8').setAttribute('transform', 'translate(800,878) scale(' + f(1 - clamp((p - C.stop * .6) / (1 - C.stop * .6)) * .3) + ')');
     },
     9: function (p) {
       var den = $('den9');
-      den.classList.toggle('licking-off', p > .3);
-      den.classList.toggle('slow', p > .3 && p <= .5);
-      den.classList.toggle('still', p > .5);
-      $('eye9').setAttribute('transform', 'translate(-28,-18) scale(1,' + (p > .5 ? .1 : 1) + ')');
+      den.classList.toggle('licking-off', p >= C.howl);
+      den.classList.toggle('slow', p >= C.howl && p < C.still);
+      den.classList.toggle('still', p >= C.still);
+      $('eye9').setAttribute('transform', 'translate(-28,-18) scale(1,' + (p >= C.still ? .1 : 1) + ')');
     },
     10: function (p) {
-      var k = clamp(p / .35);
+      var g = C.give, gl = C.clasp - C.give, k = clamp((p - (g - gl)) / gl);
       $('herHands').setAttribute('transform', 'translate(' + f((1 - k) * 260 - k * 150) + ',' + f((1 - k) * -180 + k * 200) + ')');
-      var drop = clamp((p - .36) / .1);
+      var drop = clamp((p - g - gl * .1) / (gl * .4));
       $('beadsHers').setAttribute('opacity', f(1 - drop));
       $('beadsMine').setAttribute('opacity', f(drop));
-      var clasp = clamp((p - .62) / .12);
+      var clasp = clamp((p - C.clasp - gl * .05) / (gl * .35));
       $('herHands').setAttribute('opacity', f(1 - clasp));
       $('herClasp').setAttribute('opacity', f(clasp));
     },
@@ -1358,14 +1461,16 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     var H = scenes[0].clientHeight || innerHeight, key = portrait + '|' + innerWidth + '|' + H;
     if (key === frameKey) return;
     frameKey = key;
-    sketch.setAttribute('preserveAspectRatio', portrait ? 'xMidYMid meet' : 'xMidYMid slice');
-    sketch.setAttribute('viewBox', portrait ? '450 90 1010 800' : '0 0 1600 900');
+    if (sketch) {
+      sketch.setAttribute('preserveAspectRatio', portrait ? 'xMidYMid meet' : 'xMidYMid slice');
+      sketch.setAttribute('viewBox', portrait ? (sketch.dataset.portrait || '450 90 1010 800') : '0 0 1600 900');
+    }
     layerW = H * 16 / 9;
     // Each layer only renders the slice of the drawing this shot can show (screen width + pan
     // range + parallax margin), so phone GPUs never hold a full-width 16:9 layer at 3x density.
     var k = layerW / 1600, vis = innerWidth / k, margin = 70;
     scenes.forEach(function (sc, i) {
-      if (sc.dataset.n === '3') return;
+      if ('sketch' in sc.dataset) return;
       var a = fxs[i][0], b = fxs[i][1];
       var lo = Math.max(-40, Math.min(a, b) - vis / 2 - margin), hi = Math.min(1640, Math.max(a, b) + vis / 2 + margin);
       layers[i].forEach(function (l) {
@@ -1384,6 +1489,10 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
       if (!ranges[s]) ranges[s] = { start: top, end: bot }; else ranges[s].end = bot;
     });
     linePos = lines.map(function (b) { var r = b.getBoundingClientRect(); return [r.top + y, r.bottom + y]; });
+    beats.forEach(function (b) {
+      if (!b.dataset.cue) return;
+      var R = ranges[b.dataset.s]; C[b.dataset.cue] = (b.getBoundingClientRect().top + y - R.start) / (R.end - R.start);
+    });
     var portrait = innerWidth / innerHeight < 1;
     frame(portrait);
   }
@@ -1397,6 +1506,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
       if (prev) { prev.classList.add('out'); setTimeout(function () { if (!prev.classList.contains('on')) prev.classList.remove('out'); }, 1500); }
       scenes.forEach(function (sc, i) { sc.classList.toggle('on', i === active - 1); });
       shot.textContent = labels[active];
+      geo.textContent = scenes[active - 1].dataset.geo || GEO;
       current = active; sound.scene(active);
     }
     // pre-render the neighbouring shot once the reader is past the middle of this one
@@ -1404,7 +1514,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     scenes.forEach(function (x, i) { x.classList.toggle('warm', i === want); });
     if (lite) { paintScene(active - 1); paintScene(want); releaseFar(active); }
     var sc = scenes[active - 1], fxa = fxs[active - 1];
-    var pan = portraitMode && sc.dataset.n !== '3' ? -(fxa[1] - fxa[0]) * (reduce ? .5 : p) / 1600 * layerW : 0;
+    var pan = portraitMode && !('sketch' in sc.dataset) ? -(fxa[1] - fxa[0]) * (reduce ? .5 : p) / 1600 * layerW : 0;
     if (!reduce) {
       // no push-in zoom on phones: rescaling the wide layers every frame is costly there
       var z = portraitMode ? 0 : parseFloat(sc.dataset.zoom || 0);
@@ -1421,15 +1531,22 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   }
   function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
 
-  // ---------- placeholder sound (synthesised) ----------
+  // ---------- sound: recordings from Wikimedia Commons (audio/, see audio/CREDITS.txt) over a synthesised fallback ----------
   var sound = (function () {
-    var ctx, master, windGain, lp, rev, noiseBuf, silent, on = false, played = {}, cur = 1, timer;
+    var ctx, master, windGain, lp, rev, noiseBuf, synthG, silent, on = false, vol = 1, played = {}, cur = 1, timer;
+    // looped beds per scene, as gain levels; wind is not a bed, it runs through the mix table below
+    var BEDS = { 1: { breeze: .22 }, 2: { fire: .3 }, 3: { fire: .1 }, 5: { fire: .26 }, 6: { breeze: .2 }, 8: { fire: .6 }, 10: { fire: .16 }, 11: { breeze: .24 } };
+    var SFX = ['barks', 'howl', 'cry1'];
+    var SND = 'audio/', WINDK = .6, bufs = {}, beds = {};
     // [wind level, wind low-pass]: open grassland is loud and bright, inside the tent and the den it is muffled
     var mix = { 1: [.2, 2400], 2: [.05, 500], 3: [.03, 800], 4: [.12, 1100], 5: [.04, 480], 6: [.22, 2600], 7: [.16, 1200], 8: [.04, 450], 9: [.04, 420], 10: [.06, 700], 11: [.2, 2200] };
     function build() {
       var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return false;
       ctx = new AC();
-      master = ctx.createGain(); master.gain.value = 0; master.connect(ctx.destination);
+      master = ctx.createGain(); master.gain.value = 0;
+      // a limiter after the master so the volume slider above 100 can't clip
+      var lim = ctx.createDynamicsCompressor(); lim.threshold.value = -3; lim.knee.value = 3; lim.ratio.value = 20; lim.attack.value = .003; lim.release.value = .25;
+      master.connect(lim); lim.connect(ctx.destination);
       var len = ctx.sampleRate * 3, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0), last = 0;
       for (var i = 0; i < len; i++) { var w = Math.random() * 2 - 1; last = (last + .02 * w) / 1.02; d[i] = last * 3.5 + w * .15; }
       noiseBuf = ctx.createBuffer(1, ctx.sampleRate * .3, ctx.sampleRate);
@@ -1438,7 +1555,8 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
       var bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 420; bp.Q.value = .7;
       lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2200;
       windGain = ctx.createGain(); windGain.gain.value = .2;
-      src.connect(bp); bp.connect(lp); lp.connect(windGain); windGain.connect(master); src.start();
+      synthG = ctx.createGain();
+      src.connect(bp); bp.connect(synthG); synthG.connect(lp); lp.connect(windGain); windGain.connect(master); src.start();
       var lfo = ctx.createOscillator(), lg = ctx.createGain(); lfo.frequency.value = .07; lg.gain.value = 220; lfo.connect(lg); lg.connect(bp.frequency); lfo.start();
       var gust = ctx.createOscillator(), gg = ctx.createGain(); gust.frequency.value = .11; gg.gain.value = .05; gust.connect(gg); gg.connect(windGain.gain); gust.start();
       rev = ctx.createConvolver();
@@ -1446,6 +1564,67 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
       for (var c = 0; c < 2; c++) { var ch = ib.getChannelData(c); for (var j = 0; j < il; j++) ch[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / il, 3); }
       rev.buffer = ib; var rg = ctx.createGain(); rg.gain.value = .55; rev.connect(rg); rg.connect(master);
       timer = setInterval(tick, 600);
+      load();
+      return true;
+    }
+    // Recordings start downloading as soon as the page opens, so they are usually there by the time
+    // the reader switches sound on; they are decoded once the audio context exists. Each one is a
+    // small script (audio/name.js, base64 AAC) rather than a fetch, because browsers refuse fetch and
+    // XHR on pages opened straight from disk but still run <script src>.
+    var raw = {}, state = {}, waiting = [];
+    window.__sound = function (n, b64) {
+      try {
+        var bin = atob(b64), u = new Uint8Array(bin.length);
+        for (var i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i);
+        raw[n] = u.buffer; if (ctx) decode(n);
+      } catch (e) { state[n] = 'fail'; }
+    };
+    (function () {
+      var names = ['wind'].concat(SFX);
+      for (var k in BEDS) for (var n in BEDS[k]) if (names.indexOf(n) < 0) names.push(n);
+      names.forEach(function (n) {
+        state[n] = 'loading';
+        var sc = document.createElement('script');
+        sc.src = SND + n + '.js'; sc.async = true;
+        sc.onerror = function () { state[n] = 'fail'; };
+        document.head.appendChild(sc);
+      });
+    })();
+    function load() { for (var n in raw) decode(n); }
+    function decode(n) {
+      var ab = raw[n]; delete raw[n];
+      try { ctx.decodeAudioData(ab, function (b) { bufs[n] = b; state[n] = 'ok'; ready(n); flush(n); }, function () { state[n] = 'fail'; }); } catch (e) { state[n] = 'fail'; }
+    }
+    // one-shots asked for before their file arrived play when it does, if that is within 8 seconds
+    function flush(n) {
+      waiting = waiting.filter(function (w) {
+        if (w.n !== n) return true;
+        var late = (Date.now() - w.at) / 1000;
+        if (late < 8 && on) play(n, Math.max(0, w.delay - late), w.level, w.o);
+        return false;
+      });
+    }
+    // a recording that has loaded takes over from the synth
+    function ready(n) {
+      if (n !== 'wind' && SFX.indexOf(n) >= 0) return;
+      var s = ctx.createBufferSource(), g = ctx.createGain(), t = ctx.currentTime;
+      s.buffer = bufs[n]; s.loop = true; s.connect(g); s.start(t, Math.random() * bufs[n].duration);
+      if (n === 'wind') { g.gain.value = WINDK; g.connect(lp); synthG.gain.setTargetAtTime(0, t, .8); return; }
+      g.gain.value = 0; g.connect(master); beds[n] = g; bedLevels(t);
+    }
+    function bedLevels(t) { for (var n in beds) beds[n].gain.setTargetAtTime((BEDS[cur] && BEDS[cur][n]) || 0, t, 1.2); }
+    // a one-shot recording; false only when its file could not be loaded, so the caller falls back to the synth
+    function play(n, delay, level, o) {
+      var b = bufs[n];
+      if (!b) { if (state[n] !== 'loading') return false; waiting.push({ n: n, delay: delay || 0, level: level, o: o, at: Date.now() }); return true; }
+      o = o || {};
+      var s = ctx.createBufferSource(), g = ctx.createGain(), t = ctx.currentTime + (delay || 0), at = o.at || 0, dur = o.dur || (b.duration - at) / (o.rate || 1), node = s;
+      s.buffer = b; if (o.rate) s.playbackRate.value = o.rate;
+      if (o.lp) { var fl = ctx.createBiquadFilter(); fl.type = "lowpass"; fl.frequency.value = o.lp; s.connect(fl); node = fl; }
+      node.connect(g); g.connect(master);
+      g.gain.setValueAtTime(level, t); g.gain.setValueAtTime(level, t + dur - .4); g.gain.linearRampToValueAtTime(0, t + dur);
+      if (o.wet) { var wg = ctx.createGain(); wg.gain.value = o.wet; g.connect(wg); wg.connect(rev); }
+      s.start(t, at); s.stop(t + dur + .05);
       return true;
     }
     function burst(freq, q, gain, dur, wet) {
@@ -1458,7 +1637,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     function tick() {
       if (!on) return;
       if ((cur === 2 || cur === 5) && Math.random() < .5) burst(3200, 6, .05, .04, false);
-      if ((cur === 2 || cur === 8) && Math.random() < .35) burst(1800 + Math.random() * 1500, 1.5, .03, .03, false);
+      if ((cur === 2 || cur === 8) && !bufs.fire && Math.random() < .35) burst(1800 + Math.random() * 1500, 1.5, .03, .03, false);
     }
     function barks() {
       var t0 = ctx.currentTime + .5;
@@ -1492,10 +1671,11 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     function apply() {
       if (!ctx || !on) return;
       var t = ctx.currentTime;
+      bedLevels(t);
       windGain.gain.setTargetAtTime(mix[cur][0], t, 1.2); lp.frequency.setTargetAtTime(mix[cur][1], t, 1);
-      if (cur === 4 && !played.b) { played.b = 1; barks(); }
-      if (cur === 7 && !played.h) { played.h = 1; howl(1, 300, .06); howl(6.5, 290, .055); }
-      if (cur === 9 && !played.w) { played.w = 1; whimper(); }
+      if (cur === 4 && !played.b) { played.b = 1; play('barks', .5, .3, { lp: 2400, wet: .6, rate: .92 }) || barks(); }
+      if (cur === 7 && !played.h) { played.h = 1; play('howl', 1, .5, { lp: 3200, wet: .7 }) || (howl(1, 300, .06), howl(6.5, 290, .055)); }
+      if (cur === 9 && !played.w) { played.w = 1; play('cry1', .8, .16, { lp: 3000, wet: .3 }) || whimper(); }
     }
     return {
       // iOS mutes Web Audio when the ring/silent switch is on unless the page asks for the
@@ -1512,29 +1692,28 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
         }
         var pr = silent.play(); if (pr && pr.catch) pr.catch(function () {});
       },
-      toggle: function () {
-        if (!ctx && !build()) return false;
-        on = !on;
-        if (on) { this.unlock(); if (ctx.resume) ctx.resume(); master.gain.setTargetAtTime(.9, ctx.currentTime, .6); apply(); }
-        else { master.gain.setTargetAtTime(0, ctx.currentTime, .3); if (silent) silent.pause(); }
-        return on;
+      // no on/off switch: sound starts on the reader's first tap, click or key (browsers allow
+      // audio only after a gesture) and the volume slider does the rest, 0 being silent.
+      // Called on every gesture: a swipe's touchend doesn't count as one on iOS, so keep retrying until the context runs.
+      start: function () {
+        if (!ctx && !build()) return;
+        if (!on) { on = true; master.gain.setTargetAtTime(.9 * vol, ctx.currentTime, .6); apply(); }
+        if (ctx.state !== 'running' || !silent || silent.paused) { this.unlock(); if (ctx.resume) ctx.resume(); }
       },
+      // slider 0–150 → gain; the curve is closer to how loudness is heard than a straight line
+      volume: function (v) { vol = Math.pow(v / 100, 1.7); if (on && ctx) master.gain.setTargetAtTime(.9 * vol, ctx.currentTime, .12); },
       scene: function (n) { cur = n; apply(); },
       wake: function () { if (on && ctx && ctx.state !== 'running' && ctx.resume) ctx.resume(); }
     };
   })();
 
-  var btns = [].slice.call(document.querySelectorAll('[data-sound]'));
-  btns.forEach(function (b) {
-    b.addEventListener('click', function () {
-      var on = sound.toggle();
-      btns.forEach(function (x) {
-        x.setAttribute('aria-pressed', on ? 'true' : 'false');
-        if (x.classList.contains('snd')) x.querySelector('span').textContent = on ? '声音：开' : '声音：关';
-        else x.textContent = on ? '关闭声音' : '开启声音 · 建议戴耳机';
-      });
-    });
-  });
+  ['click', 'touchend', 'keydown'].forEach(function (t) { document.addEventListener(t, function () { sound.start(); }, true); });
+
+  var volIn = $('vol');
+  try { var sv = localStorage.getItem('cflq-volume'); if (sv !== null && !isNaN(+sv)) volIn.value = sv; } catch (e) {}
+  sound.volume(+volIn.value);
+  volIn.addEventListener('input', function () { sound.volume(+volIn.value); try { localStorage.setItem('cflq-volume', volIn.value); } catch (e) {} });
+  volIn.addEventListener('click', function (e) { e.stopPropagation(); });
 
   scenes.forEach(function (sc) { sc.setAttribute('aria-hidden', 'true'); });
 
@@ -1559,7 +1738,7 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
   // Split one layer: everything that moves (by CSS animation or by the scroll-driven acting)
   // stays in the live SVG; everything else is drawn once into a canvas underneath.
   var LIVE = '.legA,.legB,.armA,.bob,.talk,.nod,.chew,.beads,.thumb,.steam,.flame,.graze,.swish,.wag,.bark,.jaw,.lean,.pant,.snarl,.teeth,.glint,.earflat,.howl,.vapor,.tuft,.lick,.tongue,.mbreath,.fbreath,.eye,.wriggle,.flag,.orbit,.skirt,.braid,text,' +
-    '#w1,#bowlArm,#men4,#dark4,#eye4,#bowl5,#beads8,#fire8,#den9,#herHands,#herClasp,#w11,#amaSharp,#amaBlur';
+    '#w1,#bowlArm,#men4,#dark4,#eye4,#bowl5,#beads8,#fire8,#den9,#herHands,#beadsHers,#beadsMine,#herClasp,#w11,#amaSharp,#amaBlur';
   var sharedDefs = document.querySelector('body > svg defs');
   function splitLayer(layer) {
     var svg = layer.querySelector(':scope > svg');
@@ -1608,17 +1787,16 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
       ls.forEach(function (l) { if (l.raster && l.raster.key) { l.raster.key = ''; l.raster.cv.width = l.raster.cv.height = 0; } });
     });
   }
-  if (lite) scenes.forEach(function (sc, i) { if (sc.dataset.n !== '3') layers[i].forEach(splitLayer); });
+  if (lite) scenes.forEach(function (sc, i) { if (!('sketch' in sc.dataset)) layers[i].forEach(splitLayer); });
 
   // ---------- reading mode: scroll, or click to step one line at a time ----------
   // Click mode locks manual scrolling and glides the page to each line, so the
   // scroll-driven acting and the scene changes play exactly as they do when scrolling.
-  var mode = 'scroll', idx = -1, glideId = 0, endEl = $('end'), hint = $('hint');
+  var mode = 'scroll', idx = -1, glideId = 0, hint = $('hint');
   var modeBtns = [].slice.call(document.querySelectorAll('[data-mode]'));
   var navBtns = [].slice.call(document.querySelectorAll('[data-step]'));
   function targetY(i) {
     if (i < 0) return 0;
-    if (i >= lines.length) return endEl.getBoundingClientRect().top + window.scrollY;
     return (linePos[i][0] + linePos[i][1]) / 2 - innerHeight / 2;
   }
   var glideSafety;
@@ -1636,13 +1814,14 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     })();
   }
   function stepTo(i, instant) {
-    idx = Math.max(-1, Math.min(lines.length, i));
-    navBtns[0].disabled = idx <= 0;
+    idx = Math.max(-1, Math.min(lines.length - 1, i));
+    navBtns[0].disabled = idx <= 0; navBtns[1].disabled = idx >= lines.length - 1;
     glide(targetY(idx), instant);
+    if (playing) arm(dwell(idx) * 1000 / rate);
   }
   function currentIndex() {
     if (curLine >= 0) return curLine;
-    return linePos.length && window.scrollY + innerHeight * .5 < linePos[0][0] ? -1 : lines.length;
+    return linePos.length && window.scrollY + innerHeight * .5 < linePos[0][0] ? -1 : lines.length - 1;
   }
   function setMode(m, quiet) {
     mode = m;
@@ -1650,22 +1829,56 @@ h1 { font: 600 clamp(2.8rem, 2rem + 4vw, 5rem)/1.1 var(--f-serif); letter-spacin
     modeBtns.forEach(function (b) { b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false'); });
     hint.textContent = m === 'click' ? '点击画面继续 · 方向键也可以' : '向下滑动';
     if (!quiet) { try { localStorage.setItem('cflq-reading-mode', m); } catch (e) {} }
+    if (m !== 'click' && playing) setPlaying(false);
     if (m === 'click') { measure(); stepTo(currentIndex(), true); }
   }
   modeBtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); setMode(b.dataset.mode); }); });
   navBtns.forEach(function (b) { b.addEventListener('click', function (e) { e.stopPropagation(); stepTo(idx + Number(b.dataset.step)); }); });
   document.addEventListener('click', function (e) {
-    if (mode !== 'click' || e.target.closest('button, a, .end')) return;
-    if (idx < lines.length) stepTo(idx + 1);
+    if (mode !== 'click' || e.target.closest('button, a, .vol, .auto')) return;
+    if (idx < lines.length - 1) stepTo(idx + 1);
   });
-  document.addEventListener('touchmove', function (e) { if (mode === 'click') e.preventDefault(); }, { passive: false });
+  document.addEventListener('touchmove', function (e) { if (mode === 'click' && !e.target.closest('.vol, .auto')) e.preventDefault(); }, { passive: false });
   document.addEventListener('keydown', function (e) {
     if (mode !== 'click' || e.altKey || e.ctrlKey || e.metaKey) return;
     if (e.target.closest && e.target.closest('button, a') && (e.key === ' ' || e.key === 'Enter')) return;
+    if (e.target.closest && e.target.closest('.vol, .auto')) return;   // arrows move the sliders, not the story
     if (['ArrowRight', 'ArrowDown', ' ', 'PageDown', 'Enter'].indexOf(e.key) >= 0) { e.preventDefault(); stepTo(idx + 1); }
     else if (['ArrowLeft', 'ArrowUp', 'PageUp'].indexOf(e.key) >= 0) { e.preventDefault(); stepTo(idx - 1); }
   });
-  document.querySelector('.again').addEventListener('click', function (e) { if (mode === 'click') { e.preventDefault(); stepTo(-1); } });
+
+  // ---------- auto play ----------
+  // At 1× each line stays up about as long as an average adult takes to read it (~270 Chinese
+  // characters a minute) plus a moment for the picture; a new shot gets a little longer.
+  // Clicking or keys still step by hand while it plays; the timer restarts from that line.
+  var autoBtn = $('autoBtn'), rateIn = $('rate'), rateOut = $('rateOut'), playing = false, rate = 1, autoT, autoDue = 0;
+  function dwell(i) {
+    if (i < 0) return 4;
+    var m = lines[i].textContent.match(/[\u3400-\u9fff\uf900-\ufaff0-9A-Za-z]/g), n = m ? m.length : 0;
+    var shot = i === 0 || lines[i].dataset.s !== lines[i - 1].dataset.s;
+    return 1.6 + n / 4.5 + (shot ? 1.8 : 0);
+  }
+  function arm(ms) { clearTimeout(autoT); autoDue = performance.now() + ms; autoT = setTimeout(advance, ms); }
+  function advance() {
+    if (!playing) return;
+    if (idx >= lines.length - 1) setPlaying(false); else stepTo(idx + 1);
+  }
+  function setPlaying(on) {
+    playing = on; clearTimeout(autoT);
+    autoBtn.setAttribute('aria-pressed', on ? 'true' : 'false'); autoBtn.title = on ? '暂停' : '自动播放';
+    if (!on) return;
+    if (mode !== 'click') setMode('click', true);
+    if (idx >= lines.length - 1) stepTo(-1); else arm(dwell(idx) * 1000 / rate);
+  }
+  function setRate(v) {
+    var old = rate; rate = v; rateOut.textContent = v + '×';
+    if (playing) arm(Math.max(0, autoDue - performance.now()) * old / rate);   // the rest of this line at the new speed
+  }
+  autoBtn.addEventListener('click', function (e) { e.stopPropagation(); setPlaying(!playing); });
+  try { var sr = parseFloat(localStorage.getItem('cflq-rate')); if (sr >= .5 && sr <= 2) rateIn.value = sr; } catch (e) {}
+  setRate(+rateIn.value);
+  rateIn.addEventListener('input', function () { setRate(+rateIn.value); try { localStorage.setItem('cflq-rate', rateIn.value); } catch (e) {} });
+  rateIn.addEventListener('click', function (e) { e.stopPropagation(); });
 
   measure(); update();
   if (lite) setMode('click', true);
